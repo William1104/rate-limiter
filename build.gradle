@@ -1,0 +1,52 @@
+group 'how-it-works'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    repositories {
+        jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "me.champeau.gradle:jmh-gradle-plugin:0.5.2"
+        classpath 'com.github.erizo.gradle:jcstress-gradle-plugin:0.8.6'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: "me.champeau.gradle.jmh"
+apply plugin: 'jcstress'
+
+sourceCompatibility = 1.8
+
+ext {
+    jcstressVersion = '0.7'
+    jmhVersion = '1.20'
+    assertJVersion = '3.11.1'
+    junit5Version = '5.3.1'
+}
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+jcstress {
+    jcstressDependency "org.openjdk.jcstress:jcstress-core:${jcstressVersion}"
+    jvmArgs = '-server -XX:+UnlockDiagnosticVMOptions'
+    iterations = 10
+}
+
+dependencies {
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${junit5Version}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junit5Version}"
+    testCompile "org.assertj:assertj-core:${assertJVersion}"
+    jcstress "org.openjdk.jcstress:jcstress-core:${jcstressVersion}"
+    jmh "org.openjdk.jmh:jmh-core:${jmhVersion}"
+    jmh "org.openjdk.jmh:jmh-generator-annprocess:${jmhVersion}"
+}
+
+test {
+    useJUnitPlatform()
+}
