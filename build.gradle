@@ -18,7 +18,8 @@ apply plugin: 'java'
 apply plugin: "me.champeau.gradle.jmh"
 apply plugin: 'jcstress'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 11
+targetCompatibility = 11
 
 ext {
     jcstressVersion = '0.7'
@@ -32,14 +33,9 @@ repositories {
     jcenter()
 }
 
-jcstress {
-    jcstressDependency "org.openjdk.jcstress:jcstress-core:${jcstressVersion}"
-    jvmArgs = '-server -XX:+UnlockDiagnosticVMOptions'
-    iterations = 10
-}
-
 dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junit5Version}"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:${junit5Version}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junit5Version}"
     testCompile "org.assertj:assertj-core:${assertJVersion}"
     jcstress "org.openjdk.jcstress:jcstress-core:${jcstressVersion}"
@@ -50,3 +46,16 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+jmh {
+    failOnError = true
+    resultsFile = project.file("${project.buildDir}/reports/jmh/results.txt")
+    resultFormat = 'CSV'
+}
+
+jcstress {
+    jcstressDependency "org.openjdk.jcstress:jcstress-core:${jcstressVersion}"
+    jvmArgs = '-server -XX:+UnlockDiagnosticVMOptions'
+    iterations = 10
+}
+

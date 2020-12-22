@@ -2,59 +2,62 @@ package one.williamwong.ratelimiter;
 
 import org.openjdk.jmh.annotations.*;
 
+import java.lang.reflect.InvocationTargetException;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-import static java.time.Duration.ofMillis;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 
-@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 2, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(3)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(MICROSECONDS)
 public class RaterLimiterBenchmark {
 
-    @Group("singleThread")
+    @Group("thread_1")
     @GroupThreads(1)
     @Benchmark
-    public void singleThread(RateLimiterWrapper rateLimiterWrapper) {
+    public void thread_1(RateLimiterWrapper rateLimiterWrapper) {
         rateLimiterWrapper.rateLimiter.acquire();
     }
 
-    @Group("tenThread")
+    @Group("thread_10")
     @GroupThreads(10)
     @Benchmark
-    public void tenThread(RateLimiterWrapper rateLimiterWrapper) {
+    public void thread_10(RateLimiterWrapper rateLimiterWrapper) {
         rateLimiterWrapper.rateLimiter.acquire();
     }
 
-    @Group("hundredThread")
+    @Group("thread_100")
     @GroupThreads(100)
     @Benchmark
-    public void hundredThread(RateLimiterWrapper rateLimiterWrapper) {
+    public void thread_100(RateLimiterWrapper rateLimiterWrapper) {
         rateLimiterWrapper.rateLimiter.acquire();
     }
-
 
     @State(Scope.Group)
     public static class RateLimiterWrapper {
-        @Param({"SimpleRateLimiter", "StampLockRateLimiter"})
+        @Param({"StampLockInstantArrayRateLimiter",
+                "StampLockLongArrayRateLimiter",
+                "SynchronizedInstantArrayRateLimiter",
+                "SynchronizedLongArrayRateLimiter"})
+
         public String rateLimiterType;
 
         public IRateLimiter rateLimiter;
 
-        @Setup
-        public void setup() {
-            switch (rateLimiterType) {
-                case "SimpleRateLimiter":
-                    rateLimiter = new SimpleRateLimiter(1_000_000, ofMillis(1));
-                    break;
-                case "StampLockRateLimiter":
-                    rateLimiter = new StampLockRateLimiter(1_000_000, ofMillis(1));
-                    break;
-                default:
-                    throw new IllegalStateException("Failed to initialize rate limiter");
-            }
+        @Setup(Level.Iteration)
+        public void setup() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+            String packageName = IRateLimiter.class.getPackageName();
+            rateLimiter = (IRateLimiter) Class.forName(packageName + "." + rateLimiterType)
+                    .getConstructor(int.class, Duration.class)
+                    .newInstance(1_000_000, Duration.ofMillis(1));
+        }
+
+        @TearDown(Level.Iteration)
+        public void tearDown() {
+            rateLimiter.reset();
         }
     }
 
