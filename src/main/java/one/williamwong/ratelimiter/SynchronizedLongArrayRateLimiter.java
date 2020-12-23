@@ -24,7 +24,7 @@ public class SynchronizedLongArrayRateLimiter implements IRateLimiter {
             if (records[pointer] != 0) {
                 final long awayFromHead = now - records[pointer];
                 if (awayFromHead < duration) {
-                    throw new RateExcessException("excess rate limit");
+                    handleExcessLimit(records.length, Duration.ofNanos(awayFromHead));
                 }
             }
             records[pointer] = now;

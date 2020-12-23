@@ -25,7 +25,7 @@ public class SynchronizedInstantArrayRateLimiter implements IRateLimiter {
             if (records[pointer] != null) {
                 final Duration awayFromHead = Duration.between(records[pointer], now);
                 if (awayFromHead.compareTo(duration) < 0) {
-                    throw new RateExcessException("excess rate limit");
+                    handleExcessLimit(records.length, awayFromHead);
                 }
             }
             records[pointer] = now;
