@@ -37,9 +37,7 @@ public class RaterLimiterBenchmark {
 
     @State(Scope.Group)
     public static class RateLimiterWrapper {
-        @Param({"StampLockInstantArrayRateLimiter",
-                "StampLockLongArrayRateLimiter",
-                "SynchronizedInstantArrayRateLimiter",
+        @Param({"StampLockLongArrayRateLimiter",
                 "SynchronizedLongArrayRateLimiter"})
 
         public String rateLimiterType;
@@ -56,6 +54,7 @@ public class RaterLimiterBenchmark {
 
         @TearDown(Level.Iteration)
         public void tearDown() {
+            System.err.println("Resetting rateLimiter " + rateLimiterType);
             rateLimiter.reset();
         }
     }

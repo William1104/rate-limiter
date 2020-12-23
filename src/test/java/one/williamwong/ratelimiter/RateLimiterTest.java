@@ -20,11 +20,13 @@ class RateLimiterTest {
             "SynchronizedLongArrayRateLimiter",
             "SynchronizedInstantArrayRateLimiter"})
     void within_rate_limit(String rateLimiterType) throws Exception {
-        final IRateLimiter rateLimiter = create(rateLimiterType);
-        for (int i = 0; i < LIMIT * 2; i++) {
-            Thread.sleep(DURATION.toMillis() / LIMIT);
-            rateLimiter.acquire();
-        }
+        Assertions.assertThatCode(() -> {
+            final IRateLimiter rateLimiter = create(rateLimiterType);
+            for (int i = 0; i < LIMIT * 2; i++) {
+                Thread.sleep(DURATION.toMillis() / LIMIT);
+                rateLimiter.acquire();
+            }
+        }).doesNotThrowAnyException();
     }
 
     private static IRateLimiter create(final String rateLimiterClassName) throws Exception {
@@ -58,12 +60,32 @@ class RateLimiterTest {
             "SynchronizedLongArrayRateLimiter",
             "SynchronizedInstantArrayRateLimiter"})
     void various_rate_limit(String rateLimiterType) throws Exception {
-        final IRateLimiter rateLimiter = create(rateLimiterType);
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < LIMIT; j++) {
-                rateLimiter.acquire();
+        Assertions.assertThatCode(() -> {
+            final IRateLimiter rateLimiter = create(rateLimiterType);
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < LIMIT; j++) {
+                    rateLimiter.acquire();
+                }
+                Thread.sleep(DURATION.toMillis());
             }
-            Thread.sleep(DURATION.toMillis());
-        }
+        }).doesNotThrowAnyException();
+    }
+
+    @ParameterizedTest(name = "[{index}] - {0}")
+    @ValueSource(strings = {
+            "StampLockLongArrayRateLimiter",
+            "StampLockInstantArrayRateLimiter",
+            "SynchronizedLongArrayRateLimiter",
+            "SynchronizedInstantArrayRateLimiter"})
+    void reset_could_clear_counts(String rateLimiterType) throws Exception {
+        Assertions.assertThatCode(() -> {
+            final IRateLimiter rateLimiter = create(rateLimiterType);
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < LIMIT; j++) {
+                    rateLimiter.acquire();
+                }
+                rateLimiter.reset();
+            }
+        }).doesNotThrowAnyException();
     }
 }
