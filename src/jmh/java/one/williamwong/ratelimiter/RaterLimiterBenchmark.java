@@ -2,7 +2,6 @@ package one.williamwong.ratelimiter;
 
 import org.openjdk.jmh.annotations.*;
 
-import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
@@ -48,8 +47,8 @@ public class RaterLimiterBenchmark {
         public IRateLimiter rateLimiter;
 
         @Setup(Level.Iteration)
-        public void setup() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-            String packageName = IRateLimiter.class.getPackageName();
+        public void setup() throws Exception {
+            final String packageName = IRateLimiter.class.getPackageName();
             rateLimiter = (IRateLimiter) Class.forName(packageName + "." + rateLimiterType)
                     .getConstructor(int.class, Duration.class)
                     .newInstance(1_000_000, Duration.ofNanos(100));
