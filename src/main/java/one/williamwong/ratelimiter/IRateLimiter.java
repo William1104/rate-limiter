@@ -8,7 +8,7 @@ public interface IRateLimiter {
     void reset();
 
     default void handleExcessLimit(int count, Duration duration) {
-        throw new RateExcessException("excess rate limit. got " + count + " invocations in " + duration);
+        throw new RateExcessException("excess rate limit. got " + count + " invocations in " + duration.toNanos() + "ns");
     }
 
     class RateExcessException extends RuntimeException {
