@@ -37,7 +37,7 @@ jobs:
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: b8c3d79d468e82abe247ddd9270c80e759f8d3f5
         run: gradle build sonarqube --info
       - name: JMH
         run: gradle jmh
