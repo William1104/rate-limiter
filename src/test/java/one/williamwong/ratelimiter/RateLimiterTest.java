@@ -47,7 +47,8 @@ class RateLimiterTest {
                 Thread.sleep(DURATION.toMillis() / LIMIT / 10);
                 rateLimiter.acquire();
             }
-        }).isInstanceOf(IRateLimiter.RateExcessException.class).hasMessage("excess rate limit");
+        }).isInstanceOf(IRateLimiter.RateExcessException.class)
+                .hasMessageContaining("excess rate limit");
     }
 
     @ParameterizedTest(name = "[{index}] - {0}")
