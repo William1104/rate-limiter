@@ -52,7 +52,7 @@ public class RaterLimiterBenchmark {
             String packageName = IRateLimiter.class.getPackageName();
             rateLimiter = (IRateLimiter) Class.forName(packageName + "." + rateLimiterType)
                     .getConstructor(int.class, Duration.class)
-                    .newInstance(1_000_000, Duration.ofMillis(1));
+                    .newInstance(1_000_000, Duration.ofNanos(100));
         }
 
         @TearDown(Level.Iteration)

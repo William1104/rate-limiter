@@ -28,7 +28,8 @@ On a laptop with CPU ( Intel(R) Core(TM) i5-1035G4 CPU @ 1.10GHz) with 8G physic
 |RaterLimiterBenchmark.thread_10  |       StampLockLongArrayRateLimiter | thrpt |  15 | 33.281 | ▒ 0.536 | ops/us |
 |RaterLimiterBenchmark.thread_10  | SynchronizedInstantArrayRateLimiter | thrpt |  15 |  7.038 | ▒ 0.175 | ops/us |
 |RaterLimiterBenchmark.thread_10  |    SynchronizedLongArrayRateLimiter | thrpt |  15 | 15.147 | ▒ 0.532 | ops/us |
-|RaterLimiterBenchmark.thread_100 |    StampLockInstantArrayRateLimiter | thrpt |  15 | 13.823 | ▒ 0.753 | ops/us |
+|RaterLimiterBenchmark.thread_100 |    StampLockIns tantArrayRateLimiter | thrpt |  15 | 13.823 | ▒ 0.753 | ops/us |
 |RaterLimiterBenchmark.thread_100 |       StampLockLongArrayRateLimiter | thrpt |  15 | 30.399 | ▒ 1.625 | ops/us |
 |RaterLimiterBenchmark.thread_100 | SynchronizedInstantArrayRateLimiter | thrpt |  15 |  6.860 | ▒ 0.163 | ops/us |
 |RaterLimiterBenchmark.thread_100 |    SynchronizedLongArrayRateLimiter | thrpt |  15 | 14.992 | ▒ 0.452 | ops/us |
+

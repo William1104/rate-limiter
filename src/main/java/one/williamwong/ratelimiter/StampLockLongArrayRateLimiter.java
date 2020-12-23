@@ -12,14 +12,14 @@ public class StampLockLongArrayRateLimiter implements IRateLimiter {
     private int pointer;
 
     public StampLockLongArrayRateLimiter(int maxInvokes, Duration duration) {
-        this.duration = duration.toMillis();
+        this.duration = duration.toNanos();
         this.records = new long[maxInvokes];
         this.lock = new StampedLock();
         this.pointer = 0;
     }
 
     @Override public void acquire() {
-        final long now = System.currentTimeMillis();
+        final long now = System.nanoTime();
         final long stamp = lock.writeLock();
         try {
             if (records[pointer] != 0) {

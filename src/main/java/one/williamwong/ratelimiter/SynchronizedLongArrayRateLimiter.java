@@ -11,7 +11,7 @@ public class SynchronizedLongArrayRateLimiter implements IRateLimiter {
     private int pointer;
 
     public SynchronizedLongArrayRateLimiter(int maxInvokes, Duration duration) {
-        this.duration = duration.toMillis();
+        this.duration = duration.toNanos();
         this.records = new long[maxInvokes];
         this.lock = new Object();
         this.pointer = 0;
@@ -19,7 +19,7 @@ public class SynchronizedLongArrayRateLimiter implements IRateLimiter {
 
     @Override
     public void acquire() {
-        final long now = System.currentTimeMillis();
+        final long now = System.nanoTime();
         synchronized (lock) {
             if (records[pointer] != 0) {
                 final long awayFromHead = now - records[pointer];
