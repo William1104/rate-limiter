@@ -14,9 +14,12 @@ buildscript {
     }
 }
 
-apply plugin: 'java'
-apply plugin: "me.champeau.gradle.jmh"
-apply plugin: 'jcstress'
+plugins {
+    id "org.sonarqube" version "3.0"
+    id "java"
+    id "me.champeau.gradle.jmh"
+    id "jcstress"
+}
 
 sourceCompatibility = 11
 targetCompatibility = 11
@@ -41,6 +44,18 @@ dependencies {
     jcstress "org.openjdk.jcstress:jcstress-core:${jcstressVersion}"
     jmh "org.openjdk.jmh:jmh-core:${jmhVersion}"
     jmh "org.openjdk.jmh:jmh-generator-annprocess:${jmhVersion}"
+}
+
+plugins {
+    id "org.sonarqube" version "3.0"
+}
+
+sonarqube {
+    properties {
+        property "sonar.projectKey", "William1104_rate-limiter"
+        property "sonar.organization", "reddish-green"
+        property "sonar.host.url", "https://sonarcloud.io"
+    }
 }
 
 test {
