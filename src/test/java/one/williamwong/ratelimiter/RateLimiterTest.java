@@ -2,52 +2,67 @@ package one.williamwong.ratelimiter;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.stream.Stream;
+import java.time.Duration;
 
 import static java.time.Duration.ofSeconds;
 
 class RateLimiterTest {
 
-    private static Stream<Arguments> arguments() {
-        return Stream.of(
-                Arguments.of("StampLockLongArrayRateLimiter", new StampLockLongArrayRateLimiter(10, ofSeconds(1))),
-                Arguments.of("StampLockInstantArrayRateLimiter", new StampLockInstantArrayRateLimiter(10, ofSeconds(1))),
-                Arguments.of("SynchronizedLongArrayRateLimiter", new SynchronizedLongArrayRateLimiter(10, ofSeconds(1))),
-                Arguments.of("SynchronizedInstantArrayRateLimiter", new SynchronizedInstantArrayRateLimiter(10, ofSeconds(1)))
-        );
-    }
+    private static final Duration DURATION = ofSeconds(1);
+    private static final int LIMIT = 10;
 
     @ParameterizedTest(name = "[{index}] - {0}")
-    @MethodSource("arguments")
-    void within_rate_limit(String rateLimiterType, IRateLimiter rateLimiter) throws InterruptedException {
-        for (int i = 0; i < 20; i++) {
-            Thread.sleep(100);
+    @ValueSource(strings = {
+            "StampLockLongArrayRateLimiter",
+            "StampLockInstantArrayRateLimiter",
+            "SynchronizedLongArrayRateLimiter",
+            "SynchronizedInstantArrayRateLimiter"})
+    void within_rate_limit(String rateLimiterType) throws Exception {
+        final IRateLimiter rateLimiter = create(rateLimiterType);
+        for (int i = 0; i < LIMIT * 2; i++) {
+            Thread.sleep(DURATION.toMillis() / LIMIT);
             rateLimiter.acquire();
         }
     }
 
+    private static IRateLimiter create(final String rateLimiterClassName) throws Exception {
+        final String packageName = IRateLimiter.class.getPackageName();
+        return (IRateLimiter) Class.forName(packageName + "." + rateLimiterClassName)
+                .getConstructor(int.class, Duration.class)
+                .newInstance(LIMIT, DURATION);
+    }
+
     @ParameterizedTest(name = "[{index}] - {0}")
-    @MethodSource("arguments")
-    void excess_rate_limit(String rateLimiterType, IRateLimiter rateLimiter) throws InterruptedException {
+    @ValueSource(strings = {
+            "StampLockLongArrayRateLimiter",
+            "StampLockInstantArrayRateLimiter",
+            "SynchronizedLongArrayRateLimiter",
+            "SynchronizedInstantArrayRateLimiter"})
+    void excess_rate_limit(String rateLimiterType) throws InterruptedException {
         Assertions.assertThatCode(() -> {
-            for (int i = 0; i < 1000; i++) {
-                Thread.sleep(10);
+            final IRateLimiter rateLimiter = create(rateLimiterType);
+            for (int i = 0; i < LIMIT * 10; i++) {
+                Thread.sleep(DURATION.toMillis() / LIMIT / 10);
                 rateLimiter.acquire();
             }
         }).isInstanceOf(IRateLimiter.RateExcessException.class).hasMessage("excess rate limit");
     }
 
     @ParameterizedTest(name = "[{index}] - {0}")
-    @MethodSource("arguments")
-    void various_rate_limit(String rateLimiterType, IRateLimiter rateLimiter) throws InterruptedException {
+    @ValueSource(strings = {
+            "StampLockLongArrayRateLimiter",
+            "StampLockInstantArrayRateLimiter",
+            "SynchronizedLongArrayRateLimiter",
+            "SynchronizedInstantArrayRateLimiter"})
+    void various_rate_limit(String rateLimiterType) throws Exception {
+        final IRateLimiter rateLimiter = create(rateLimiterType);
         for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 10; j++) {
+            for (int j = 0; j < LIMIT; j++) {
                 rateLimiter.acquire();
             }
-            Thread.sleep(1000);
+            Thread.sleep(DURATION.toMillis());
         }
     }
 }
