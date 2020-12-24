@@ -23,8 +23,8 @@ public class SynchronizedInstantArrayRateLimiter implements IRateLimiter {
 
     @Override
     public void acquire() {
-        final Instant now = Instant.now();
         synchronized (lock) {
+            final Instant now = Instant.now();
             if (records[pointer] != null) {
                 final Duration awayFromHead = Duration.between(records[pointer], now);
                 if (awayFromHead.compareTo(duration) < 0) {

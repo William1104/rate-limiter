@@ -19,8 +19,8 @@ public class SynchronizedLongArrayRateLimiter implements IRateLimiter {
 
     @Override
     public void acquire() {
-        final long now = System.nanoTime();
         synchronized (lock) {
+            final long now = System.nanoTime();
             if (records[pointer] != 0) {
                 final long awayFromHead = now - records[pointer];
                 if (awayFromHead < duration) {

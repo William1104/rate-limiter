@@ -19,9 +19,9 @@ public class StampLockLongArrayRateLimiter implements IRateLimiter {
     }
 
     @Override public void acquire() {
-        final long now = System.nanoTime();
         final long stamp = lock.writeLock();
         try {
+            final long now = System.nanoTime();
             if (records[pointer] != 0) {
                 final long awayFromHead = now - records[pointer];
                 if (awayFromHead < duration) {

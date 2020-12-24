@@ -23,9 +23,9 @@ public class StampLockInstantArrayRateLimiter implements IRateLimiter {
     }
 
     @Override public void acquire() {
-        final Instant now = Instant.now();
         final long stamp = lock.writeLock();
         try {
+            final Instant now = Instant.now();
             if (records[pointer] != null) {
                 final Duration awayFromHead = Duration.between(records[pointer], now);
                 if (awayFromHead.compareTo(duration) < 0) {
