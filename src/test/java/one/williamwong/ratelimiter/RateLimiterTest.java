@@ -6,22 +6,36 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Duration;
 
-import static java.time.Duration.ofSeconds;
-
 class RateLimiterTest {
 
-    private static final Duration DURATION = ofSeconds(1);
+    private static final Duration DURATION = Duration.ofMillis(100);
     private static final int LIMIT = 10;
 
-    @ParameterizedTest(name = "[{index}] - {0}")
-    @ValueSource(strings = {
-            "StampLockLongArrayRateLimiter",
-            "StampLockInstantArrayRateLimiter",
-            "SynchronizedLongArrayRateLimiter",
-            "SynchronizedInstantArrayRateLimiter"})
-    void within_rate_limit(String rateLimiterType) throws Exception {
+    private static IRateLimiter create(final Class<? extends IRateLimiter> rateLimiterClass) throws Exception {
+        if (rateLimiterClass.equals(StampLockLongArrayRateLimiter.class)) {
+            return new StampLockLongArrayRateLimiter(LIMIT, DURATION);
+        }
+        if (rateLimiterClass.equals(StampLockInstantArrayRateLimiter.class)) {
+            return new StampLockInstantArrayRateLimiter(LIMIT, DURATION);
+        }
+        if (rateLimiterClass.equals(SynchronizedLongArrayRateLimiter.class)) {
+            return new SynchronizedLongArrayRateLimiter(LIMIT, DURATION);
+        }
+        if (rateLimiterClass.equals(SynchronizedInstantArrayRateLimiter.class)) {
+            return new SynchronizedInstantArrayRateLimiter(LIMIT, DURATION);
+        }
+        throw new IllegalArgumentException("Cannot prepare the rate limiter with class[" + rateLimiterClass + "]");
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {
+            StampLockLongArrayRateLimiter.class,
+            StampLockInstantArrayRateLimiter.class,
+            SynchronizedLongArrayRateLimiter.class,
+            SynchronizedInstantArrayRateLimiter.class})
+    void within_rate_limit(Class<? extends IRateLimiter> rateLimitClass) throws Exception {
         Assertions.assertThatCode(() -> {
-            final IRateLimiter rateLimiter = create(rateLimiterType);
+            final IRateLimiter rateLimiter = create(rateLimitClass);
             for (int i = 0; i < LIMIT * 2; i++) {
                 Thread.sleep(DURATION.toMillis() / LIMIT);
                 rateLimiter.acquire();
@@ -29,22 +43,15 @@ class RateLimiterTest {
         }).doesNotThrowAnyException();
     }
 
-    private static IRateLimiter create(final String rateLimiterClassName) throws Exception {
-        final String packageName = IRateLimiter.class.getPackageName();
-        return (IRateLimiter) Class.forName(packageName + "." + rateLimiterClassName)
-                .getConstructor(int.class, Duration.class)
-                .newInstance(LIMIT, DURATION);
-    }
-
-    @ParameterizedTest(name = "[{index}] - {0}")
-    @ValueSource(strings = {
-            "StampLockLongArrayRateLimiter",
-            "StampLockInstantArrayRateLimiter",
-            "SynchronizedLongArrayRateLimiter",
-            "SynchronizedInstantArrayRateLimiter"})
-    void excess_rate_limit(String rateLimiterType) throws InterruptedException {
+    @ParameterizedTest
+    @ValueSource(classes = {
+            StampLockLongArrayRateLimiter.class,
+            StampLockInstantArrayRateLimiter.class,
+            SynchronizedLongArrayRateLimiter.class,
+            SynchronizedInstantArrayRateLimiter.class})
+    void excess_rate_limit(final Class<? extends IRateLimiter> rateLimitClass) {
         Assertions.assertThatCode(() -> {
-            final IRateLimiter rateLimiter = create(rateLimiterType);
+            final IRateLimiter rateLimiter = create(rateLimitClass);
             for (int i = 0; i < LIMIT * 10; i++) {
                 Thread.sleep(DURATION.toMillis() / LIMIT / 10);
                 rateLimiter.acquire();
@@ -53,33 +60,33 @@ class RateLimiterTest {
                 .hasMessageContaining("excess rate limit");
     }
 
-    @ParameterizedTest(name = "[{index}] - {0}")
-    @ValueSource(strings = {
-            "StampLockLongArrayRateLimiter",
-            "StampLockInstantArrayRateLimiter",
-            "SynchronizedLongArrayRateLimiter",
-            "SynchronizedInstantArrayRateLimiter"})
-    void various_rate_limit(String rateLimiterType) throws Exception {
+    @ParameterizedTest
+    @ValueSource(classes = {
+            StampLockLongArrayRateLimiter.class,
+            StampLockInstantArrayRateLimiter.class,
+            SynchronizedLongArrayRateLimiter.class,
+            SynchronizedInstantArrayRateLimiter.class})
+    void various_rate_limit(final Class<? extends IRateLimiter> rateLimitClass) {
         Assertions.assertThatCode(() -> {
-            final IRateLimiter rateLimiter = create(rateLimiterType);
+            final IRateLimiter rateLimiter = create(rateLimitClass);
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < LIMIT; j++) {
                     rateLimiter.acquire();
                 }
-                Thread.sleep(DURATION.toMillis());
+                Thread.sleep(DURATION.toMillis() + 1);
             }
         }).doesNotThrowAnyException();
     }
 
-    @ParameterizedTest(name = "[{index}] - {0}")
-    @ValueSource(strings = {
-            "StampLockLongArrayRateLimiter",
-            "StampLockInstantArrayRateLimiter",
-            "SynchronizedLongArrayRateLimiter",
-            "SynchronizedInstantArrayRateLimiter"})
-    void reset_could_clear_counts(String rateLimiterType) throws Exception {
+    @ParameterizedTest
+    @ValueSource(classes = {
+            StampLockLongArrayRateLimiter.class,
+            StampLockInstantArrayRateLimiter.class,
+            SynchronizedLongArrayRateLimiter.class,
+            SynchronizedInstantArrayRateLimiter.class})
+    void reset_could_clear_counts(final Class<? extends IRateLimiter> rateLimitClass) {
         Assertions.assertThatCode(() -> {
-            final IRateLimiter rateLimiter = create(rateLimiterType);
+            final IRateLimiter rateLimiter = create(rateLimitClass);
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < LIMIT; j++) {
                     rateLimiter.acquire();

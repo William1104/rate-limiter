@@ -5,13 +5,11 @@ import org.openjdk.jmh.annotations.*;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.concurrent.TimeUnit.MICROSECONDS;
-
 @Warmup(iterations = 2, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(3)
 @BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(MICROSECONDS)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class RaterLimiterBenchmark {
 
     @Group("thread_1")
@@ -38,8 +36,9 @@ public class RaterLimiterBenchmark {
     @State(Scope.Group)
     public static class RateLimiterWrapper {
         @Param({"StampLockLongArrayRateLimiter",
-                "SynchronizedLongArrayRateLimiter"})
-
+                "StampLockInstantArrayRateLimiter",
+                "SynchronizedLongArrayRateLimiter",
+                "SynchronizedInstantArrayRateLimiter"})
         public String rateLimiterType;
 
         public IRateLimiter rateLimiter;
@@ -49,12 +48,11 @@ public class RaterLimiterBenchmark {
             final String packageName = IRateLimiter.class.getPackageName();
             rateLimiter = (IRateLimiter) Class.forName(packageName + "." + rateLimiterType)
                     .getConstructor(int.class, Duration.class)
-                    .newInstance(1_000_000, Duration.ofNanos(1));
+                    .newInstance(10_000_000, Duration.ofNanos(10));
         }
 
         @TearDown(Level.Iteration)
         public void tearDown() {
-            System.err.println("Resetting rateLimiter " + rateLimiterType);
             rateLimiter.reset();
         }
     }

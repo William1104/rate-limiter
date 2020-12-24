@@ -13,9 +13,6 @@ public class StampLockInstantArrayRateLimiter implements IRateLimiter {
     private int pointer;
 
     public StampLockInstantArrayRateLimiter(int maxInvokes, Duration duration) {
-        if (duration.compareTo(Duration.ofSeconds(1)) < 0) {
-            throw new IllegalArgumentException("Cannot support duration less than a second in this implementation.");
-        }
         this.duration = duration;
         this.records = new Instant[maxInvokes];
         this.lock = new StampedLock();
