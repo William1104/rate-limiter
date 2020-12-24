@@ -5,11 +5,11 @@ import org.openjdk.jmh.annotations.*;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-@Warmup(iterations = 2, time = 1, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(3)
-@BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@BenchmarkMode(Mode.SampleTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 public class RaterLimiterBenchmark {
 
     @Group("thread_1")
@@ -36,9 +36,8 @@ public class RaterLimiterBenchmark {
     @State(Scope.Group)
     public static class RateLimiterWrapper {
         @Param({"StampLockLongArrayRateLimiter",
-                "StampLockInstantArrayRateLimiter",
                 "SynchronizedLongArrayRateLimiter",
-                "SynchronizedInstantArrayRateLimiter"})
+        })
         public String rateLimiterType;
 
         public IRateLimiter rateLimiter;
@@ -48,7 +47,7 @@ public class RaterLimiterBenchmark {
             final String packageName = IRateLimiter.class.getPackageName();
             rateLimiter = (IRateLimiter) Class.forName(packageName + "." + rateLimiterType)
                     .getConstructor(int.class, Duration.class)
-                    .newInstance(10_000_000, Duration.ofNanos(10));
+                    .newInstance(10_000_000, Duration.ofNanos(100));
         }
 
         @TearDown(Level.Iteration)
