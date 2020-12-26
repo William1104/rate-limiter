@@ -82,8 +82,7 @@ jmh {
     jvmArgsAppend = [
             '-server',
             '-XX:+UnlockDiagnosticVMOptions',
-            '-XX:+UseNUMA',
-            '-XX:+UseLWPSynchronization'
+            '-XX:+UseNUMA'
     ]
 }
 
