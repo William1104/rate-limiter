@@ -36,11 +36,13 @@ public class RaterLimiterBenchmark {
     @State(Scope.Group)
     public static class RateLimiterWrapper {
         @Param({"StampLockLongArrayRateLimiter",
+                "StampLockInstantArrayRateLimiter",
                 "SynchronizedLongArrayRateLimiter",
+                "SynchronizedInstantArrayRateLimiter",
         })
-        public String rateLimiterType;
+        private String rateLimiterType;
 
-        public IRateLimiter rateLimiter;
+        private IRateLimiter rateLimiter;
 
         @Setup(Level.Iteration)
         public void setup() throws Exception {
