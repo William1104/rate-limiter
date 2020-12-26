@@ -4,14 +4,22 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 
+import static java.time.Duration.between;
+import static java.time.Instant.now;
+
 public class SynchronizedInstantArrayRateLimiter implements IRateLimiter {
 
+    private final ISleeper sleeper;
     private final Duration duration;
     private final Instant[] records;
     private final Object lock;
     private int pointer;
 
-    public SynchronizedInstantArrayRateLimiter(int maxInvokes, Duration duration) {
+    public SynchronizedInstantArrayRateLimiter(final ISleeper sleeper, int maxInvokes, Duration duration) {
+        if (duration.compareTo(Duration.ofMillis(1)) < 0) {
+            throw new IllegalArgumentException("Cannot support rate limiter with duration less than 1ms");
+        }
+        this.sleeper = sleeper;
         this.duration = duration;
         this.records = new Instant[maxInvokes];
         this.lock = new Object();
@@ -19,14 +27,13 @@ public class SynchronizedInstantArrayRateLimiter implements IRateLimiter {
     }
 
     @Override
-    public void acquire() {
+    public void acquire() throws InterruptedException {
         synchronized (lock) {
-            final Instant now = Instant.now();
-            if (records[pointer] != null) {
-                final Duration awayFromHead = Duration.between(records[pointer], now);
-                if (awayFromHead.compareTo(duration) < 0) {
-                    handleExcessLimit(records.length, awayFromHead);
-                }
+            Instant now = now();
+            if (records[pointer] != null &&
+                    between(records[pointer], now).compareTo(duration) < 0) {
+                sleeper.sleepTill(records[pointer].plus(duration));
+                now = now();
             }
             records[pointer] = now;
             pointer = (pointer + 1) % records.length;
