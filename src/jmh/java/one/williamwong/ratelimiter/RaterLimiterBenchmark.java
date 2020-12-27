@@ -15,21 +15,21 @@ public class RaterLimiterBenchmark {
     @Group("thread_1")
     @GroupThreads(1)
     @Benchmark
-    public void thread_1(RateLimiterWrapper rateLimiterWrapper) {
+    public void thread_1(RateLimiterWrapper rateLimiterWrapper) throws InterruptedException {
         rateLimiterWrapper.rateLimiter.acquire();
     }
 
     @Group("thread_10")
     @GroupThreads(10)
     @Benchmark
-    public void thread_10(RateLimiterWrapper rateLimiterWrapper) {
+    public void thread_10(RateLimiterWrapper rateLimiterWrapper) throws InterruptedException {
         rateLimiterWrapper.rateLimiter.acquire();
     }
 
     @Group("thread_100")
     @GroupThreads(100)
     @Benchmark
-    public void thread_100(RateLimiterWrapper rateLimiterWrapper) {
+    public void thread_100(RateLimiterWrapper rateLimiterWrapper) throws InterruptedException {
         rateLimiterWrapper.rateLimiter.acquire();
     }
 
@@ -48,8 +48,8 @@ public class RaterLimiterBenchmark {
         public void setup() throws Exception {
             final String packageName = IRateLimiter.class.getPackageName();
             rateLimiter = (IRateLimiter) Class.forName(packageName + "." + rateLimiterType)
-                    .getConstructor(int.class, Duration.class)
-                    .newInstance(1_000_000, Duration.ofMillis(10));
+                    .getConstructor(ISleeper.class, int.class, Duration.class)
+                    .newInstance(new Sleeper(), 1_000_000, Duration.ofMillis(1));
         }
 
         @TearDown(Level.Iteration)
