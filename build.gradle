@@ -25,7 +25,7 @@ sourceCompatibility = 11
 targetCompatibility = 11
 
 ext {
-    jcstressVersion = '0.7'
+    jcstressVersion = '0.5'
     jmhVersion = '1.20'
     assertJVersion = '3.11.1'
     junit5Version = '5.3.1'
@@ -40,10 +40,11 @@ repositories {
 dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junit5Version}"
     testImplementation "org.junit.jupiter:junit-jupiter-params:${junit5Version}"
+    testImplementation "org.mockito:mockito-core:${mockitoVersion}"
+    testImplementation "org.assertj:assertj-core:${assertJVersion}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junit5Version}"
-    testCompile "org.mockito:mockito-core:${mockitoVersion}"
-    testCompile "org.assertj:assertj-core:${assertJVersion}"
     jcstress "org.openjdk.jcstress:jcstress-core:${jcstressVersion}"
+    jcstress "org.mockito:mockito-core:${mockitoVersion}"
     jmh "org.openjdk.jmh:jmh-core:${jmhVersion}"
     jmh "org.openjdk.jmh:jmh-generator-annprocess:${jmhVersion}"
 }
@@ -90,8 +91,8 @@ jmh {
 }
 
 jcstress {
-    jcstressDependency "org.openjdk.jcstress:jcstress-core:${jcstressVersion}"
-    jvmArgs = '-server -XX:+UnlockDiagnosticVMOptions'
-    iterations = 10
+    jvmArgs = '-server -XX:+UnlockDiagnosticVMOptions -XX:+UseNUMA'
+    concurrency = 100
+    verbose = true
 }
 

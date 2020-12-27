@@ -16,9 +16,6 @@ public class SynchronizedInstantArrayRateLimiter implements IRateLimiter {
     private int pointer;
 
     public SynchronizedInstantArrayRateLimiter(final ISleeper sleeper, int maxInvokes, Duration duration) {
-        if (duration.compareTo(Duration.ofMillis(1)) < 0) {
-            throw new IllegalArgumentException("Cannot support rate limiter with duration less than 1ms");
-        }
         this.sleeper = sleeper;
         this.duration = duration;
         this.records = new Instant[maxInvokes];
