@@ -35,7 +35,8 @@ public class RaterLimiterBenchmark {
 
     @State(Scope.Group)
     public static class RateLimiterWrapper {
-        @Param({"StampLockLongArrayRateLimiter",
+        @Param({"GuavaRateLimiter",
+                "StampLockLongArrayRateLimiter",
                 "StampLockInstantArrayRateLimiter",
                 "SynchronizedLongArrayRateLimiter",
                 "SynchronizedInstantArrayRateLimiter",
@@ -48,8 +49,8 @@ public class RaterLimiterBenchmark {
         public void setup() throws Exception {
             final String packageName = IRateLimiter.class.getPackageName();
             rateLimiter = (IRateLimiter) Class.forName(packageName + "." + rateLimiterType)
-                    .getConstructor(ISleeper.class, int.class, Duration.class)
-                    .newInstance(new Sleeper(), 1_000_000, Duration.ofMillis(1));
+                    .getConstructor(int.class, Duration.class)
+                    .newInstance(1_000_000, Duration.ofMillis(1));
         }
 
         @TearDown(Level.Iteration)

@@ -14,6 +14,10 @@ public class SynchronizedLongArrayRateLimiter implements IRateLimiter {
     private final Object lock;
     private int pointer;
 
+    public SynchronizedLongArrayRateLimiter(final int maxInvokes, final Duration duration) {
+        this(new Sleeper(), maxInvokes, duration);
+    }
+
     public SynchronizedLongArrayRateLimiter(final ISleeper sleeper, final int maxInvokes, final Duration duration) {
         this.sleeper = sleeper;
         this.duration = duration.toNanos();
