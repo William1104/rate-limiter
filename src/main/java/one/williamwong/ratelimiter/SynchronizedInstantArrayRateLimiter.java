@@ -15,6 +15,10 @@ public class SynchronizedInstantArrayRateLimiter implements IRateLimiter {
     private final Object lock;
     private int pointer;
 
+    public SynchronizedInstantArrayRateLimiter(int maxInvokes, Duration duration) {
+        this(new Sleeper(), maxInvokes, duration);
+    }
+
     public SynchronizedInstantArrayRateLimiter(final ISleeper sleeper, int maxInvokes, Duration duration) {
         this.sleeper = sleeper;
         this.duration = duration;
