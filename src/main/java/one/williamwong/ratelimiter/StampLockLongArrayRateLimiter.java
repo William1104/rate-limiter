@@ -20,9 +20,6 @@ public class StampLockLongArrayRateLimiter implements IRateLimiter {
     }
 
     public StampLockLongArrayRateLimiter(ISleeper sleeper, int maxInvokes, Duration duration) {
-        if (duration.compareTo(Duration.ofMillis(1)) < 0) {
-            throw new IllegalArgumentException("Cannot support rate limiter with duration less than 1ms");
-        }
         this.sleeper = sleeper;
         this.duration = duration.toNanos();
         this.records = new long[maxInvokes];
