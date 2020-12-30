@@ -10,10 +10,10 @@ public class GuavaRateLimiter implements IRateLimiter {
     private final double maxInvokesInASecond;
     private final AtomicReference<RateLimiter> guavaRateLimiterRef;
 
-    public GuavaRateLimiter(final int maxInvokesInASecond, final Duration duration) {
+    public GuavaRateLimiter(final int maxInvokes, final Duration duration) {
         this.maxInvokesInASecond =
-                maxInvokesInASecond * (
-                        duration.toNanos() / 1_000_000.0);
+                (double) maxInvokes * (
+                        (double) duration.toNanos() / (double) Duration.ofSeconds(1).toNanos());
         this.guavaRateLimiterRef = new AtomicReference<>(RateLimiter.create(maxInvokesInASecond));
     }
 

@@ -2,16 +2,16 @@ package one.williamwong.ratelimiter;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
+import static java.time.Duration.between;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 class RateLimiterTest {
 
@@ -19,12 +19,20 @@ class RateLimiterTest {
     private static final int LIMIT = 10;
 
     private static IRateLimiter create(final Class<? extends IRateLimiter> rateLimiterClass,
-                                       final ISleeper sleeper,
                                        final int limit,
                                        final Duration duration) throws Exception {
         return rateLimiterClass
-                .getConstructor(ISleeper.class, int.class, Duration.class)
-                .newInstance(sleeper, limit, duration);
+                .getConstructor(int.class, Duration.class)
+                .newInstance(limit, duration);
+    }
+
+    private static void assertEmitTimesDoesNotExcessRateLimit(List<Instant> emitTimes) {
+        // calculate the time different between LIMIT calls.
+        // the time difference between them should be bigger than DURATION
+        for (int i = 0; i < emitTimes.size() - LIMIT - 1; i++) {
+            final Duration timeTook = between(emitTimes.get(i), emitTimes.get(i + LIMIT + 1));
+            assertThat(timeTook).isGreaterThanOrEqualTo(DURATION);
+        }
     }
 
     @ParameterizedTest
@@ -36,25 +44,20 @@ class RateLimiterTest {
     })
     void within_rate_limit(Class<? extends IRateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
-        final ISleeper sleeper = Mockito.spy(new Sleeper());
-        final IRateLimiter rateLimiter = create(rateLimiterClass, sleeper, LIMIT, DURATION);
+        final IRateLimiter rateLimiter = create(rateLimiterClass, LIMIT, DURATION);
 
         // execute multiple 'acquire'
-        // interval between acquire is right above the rate limit
-        final long startTime = System.currentTimeMillis();
-        assertThatCode(() -> {
-            for (int i = 0; i < LIMIT * 2; i++) {
-                NANOSECONDS.sleep(DURATION.toNanos() / LIMIT);
-                rateLimiter.acquire();
-            }
-        }).doesNotThrowAnyException();
-        long endTime = System.currentTimeMillis();
+        // interval between acquire is inverse of rate limit.
+        final List<Instant> emitTimes = new ArrayList<>();
+        final long sleepInterval = DURATION.toNanos() / LIMIT;
+        for (int i = 0; i < LIMIT * 2; i++) {
+            NANOSECONDS.sleep(sleepInterval);
+            rateLimiter.acquire();
+            emitTimes.add(Instant.now());
+        }
 
-        // make sure the rate limiter slow down the speed to LIMIT/DURATION.
-        assertThat((endTime - startTime)).isGreaterThanOrEqualTo(DURATION.toMillis() * 2);
-
-        // make sure 'sleeper' is not called in this scenario.
-        verify(sleeper, never()).sleepTill(any(Instant.class));
+        // make sure the rate limiter slow down the speed.
+        assertEmitTimesDoesNotExcessRateLimit(emitTimes);
     }
 
     @ParameterizedTest
@@ -66,27 +69,19 @@ class RateLimiterTest {
     })
     void excess_rate_limit(final Class<? extends IRateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
-        final ISleeper sleeper = Mockito.spy(new Sleeper());
-        final IRateLimiter rateLimiter = create(rateLimiterClass, sleeper, LIMIT, DURATION);
+        final IRateLimiter rateLimiter = create(rateLimiterClass, LIMIT, DURATION);
 
         // execute multiple 'acquire'
-        // interval between acquire is below the rate limit
+        // interval between acquire is less than inverse of rate limit.
         final long sleepIntervalInNS = DURATION.toNanos() / LIMIT / 10;
-        final long startTime = System.currentTimeMillis();
-        assertThatCode(() -> {
-            for (int i = 0; i < LIMIT * 10; i++) {
-                NANOSECONDS.sleep(sleepIntervalInNS);
-                rateLimiter.acquire();
-            }
+        final List<Instant> emitTimes = new ArrayList<>();
+        for (int i = 0; i < LIMIT * 10; i++) {
+            NANOSECONDS.sleep(sleepIntervalInNS);
             rateLimiter.acquire();
-        }).doesNotThrowAnyException();
-        long endTime = System.currentTimeMillis();
+        }
 
         // make sure the rate limiter slow down the speed to LIMIT/DURATION.
-        assertThat((endTime - startTime)).isGreaterThanOrEqualTo(DURATION.toMillis() * 10);
-
-        // expecting sleeper to be invoked multiples times to slow down the process.
-        verify(sleeper, atLeastOnce()).sleepTill(any(Instant.class));
+        assertEmitTimesDoesNotExcessRateLimit(emitTimes);
     }
 
     @ParameterizedTest
@@ -97,27 +92,22 @@ class RateLimiterTest {
             SynchronizedInstantArrayRateLimiter.class
     })
     void various_rate_limit(final Class<? extends IRateLimiter> rateLimiterClass) throws Exception {
+
         // setup rate limiter and sleeper
-        final ISleeper sleeper = Mockito.spy(new Sleeper());
-        final IRateLimiter rateLimiter = create(rateLimiterClass, sleeper, LIMIT, DURATION);
+        final Random random = new Random(System.nanoTime());
+        final IRateLimiter rateLimiter = create(rateLimiterClass, LIMIT, DURATION);
 
         // execute multiple 'acquire'
-        // interval between acquire is not uniform, but we won't have more than LIMIT execution in last DURATION period.
-        final long startTime = System.currentTimeMillis();
-        assertThatCode(() -> {
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < LIMIT; j++) {
-                    rateLimiter.acquire();
-                }
-                NANOSECONDS.sleep(DURATION.toNanos() / LIMIT);
-            }
+        // interval between acquire is between 0ns and double of the inverse of rate limit.
+        final List<Instant> emitTimes = new ArrayList<>();
+        final int maxSleepInterval = (int) (DURATION.toNanos() / LIMIT * 2);
+        for (int i = 0; i < LIMIT * 3; i++) {
+            NANOSECONDS.sleep(random.nextInt(maxSleepInterval));
             rateLimiter.acquire();
-        }).doesNotThrowAnyException();
-        long endTime = System.currentTimeMillis();
+            emitTimes.add(Instant.now());
+        }
 
-        // make sure the rate limiter slow down the speed to LIMIT/DURATION.
-        assertThat((endTime - startTime)).isGreaterThanOrEqualTo(DURATION.toMillis() * 3);
-
+        assertEmitTimesDoesNotExcessRateLimit(emitTimes);
     }
 
     @ParameterizedTest
@@ -129,26 +119,20 @@ class RateLimiterTest {
     })
     void reset_could_clear_counts(final Class<? extends IRateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
-        final ISleeper sleeper = Mockito.spy(new Sleeper());
-        final IRateLimiter rateLimiter = create(rateLimiterClass, sleeper, LIMIT, DURATION);
+        final IRateLimiter rateLimiter = create(rateLimiterClass, LIMIT, DURATION);
 
         // execute multiple 'acquire'
         // no sleep time between invocation. but all counter should be 'reset' after LIMIT of invocation.
         final long startTime = System.currentTimeMillis();
-        assertThatCode(() -> {
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < LIMIT; j++) {
-                    rateLimiter.acquire();
-                }
-                rateLimiter.reset();
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < LIMIT; j++) {
+                rateLimiter.acquire();
             }
-        }).doesNotThrowAnyException();
+            rateLimiter.reset();
+        }
         long endTime = System.currentTimeMillis();
 
         // make sure the rate limiter slow down the speed to LIMIT/DURATION.
         assertThat((endTime - startTime)).isLessThan(DURATION.toMillis());
-
-        // make sure 'sleeper' is not called in this scenario.
-        verify(sleeper, never()).sleepTill(any(Instant.class));
     }
 }
