@@ -23,7 +23,7 @@ plugins {
 sourceCompatibility = 11
 targetCompatibility = 11
 group 'one.williamwong'
-version '1.0-SNAPSHOT'
+version '0.0.1'
 
 ext {
     jcstressVersion = '0.5'
@@ -121,6 +121,16 @@ publishing {
                     credentials {
                         username = System.getenv("GITHUB_ACTOR")
                         password = System.getenv("GITHUB_TOKEN")
+                    }
+                }
+                maven {
+                    name = "OSSRH"
+                    def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+                    def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+                    url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                    credentials {
+                        username = System.getenv("OSSRH_USERNAME")
+                        password = System.getenv("OSSRH_PASSWORD")
                     }
                 }
             }

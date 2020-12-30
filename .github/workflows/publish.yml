@@ -31,6 +31,8 @@ jobs:
         run: gradle build --info
       - name: Publish
         env:
+          OSSRH_USERNAME: ${{ OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ OSSRH_PASSWORD }}
           GITHUB_ACTOR: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gradle publish --info
