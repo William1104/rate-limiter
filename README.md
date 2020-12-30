@@ -1,5 +1,5 @@
 # rate-limiter
-A simple Rate Limiter implementation focusing on avoiding overflow issue. It is capable to limit speed in subsecond level with a very little performance overhead.
+A simple Rate Limiter implementation. It is capable to limit speed with interval less than a second. (eg no more than 1000 requests in 100ms)
 
 Currently, we have 4 implementations.  
 - StampLockInstantArrayRateLimiter
