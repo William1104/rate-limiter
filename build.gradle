@@ -17,12 +17,13 @@ plugins {
     id "me.champeau.gradle.jmh" version "0.5.2"
     id "com.github.erizo.gradle.jcstress" version "0.8.6"
     id "org.sonarqube" version "3.0"
+    id 'maven-publish'
 }
 
-group 'one.william.rate-limiter'
-version '1.0-SNAPSHOT'
 sourceCompatibility = 11
 targetCompatibility = 11
+group 'one.williamwong'
+version '1.0-SNAPSHOT'
 
 ext {
     jcstressVersion = '0.5'
@@ -64,7 +65,7 @@ jacocoTestReport {
 
 sonarqube {
     properties {
-        property "sonar.projectKey", "William1104_rate-limiter"
+        property "sonar.projectKey", "one-williamwong_rate-limiter"
         property "sonar.organization", "one-williamwong"
         property "sonar.host.url", "https://sonarcloud.io"
         property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
@@ -98,3 +99,31 @@ jcstress {
     verbose = true
 }
 
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+artifacts {
+    archives jar
+    archives sourcesJar
+    archives javadocJar
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            repositories {
+                maven {
+                    name = "GitHubPackages"
+                    url = "https://maven.pkg.github.com/one-williamwong/rate-limiter"
+                    credentials {
+                        username = System.getenv("GITHUB_ACTOR")
+                        password = System.getenv("GITHUB_TOKEN")
+                    }
+                }
+            }
+        }
+    }
+}
