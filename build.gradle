@@ -14,6 +14,7 @@ buildscript {
 plugins {
     id "java"
     id 'jacoco'
+    id 'me.qoomon.git-versioning' version '2.1.1'
     id "me.champeau.gradle.jmh" version "0.5.2"
     id "com.github.erizo.gradle.jcstress" version "0.8.6"
     id "org.sonarqube" version "3.0"
@@ -22,9 +23,29 @@ plugins {
 
 sourceCompatibility = 11
 targetCompatibility = 11
-group 'one.williamwong'
-version '0.0.1'
-
+group = 'one.williamwong'
+version = '0.0.0-SNAPSHOT'
+gitVersioning.apply {
+    branch {
+        pattern = 'master'
+        versionFormat = '${version}'
+    }
+    branch {
+        pattern = 'feature/(?<feature>.+)'
+        versionFormat = '${feature}-SNAPSHOT'
+    }
+    branch {
+        pattern = 'pull/.+'
+        versionFormat = '${branch}-SNAPSHOT'
+    }
+    tag {
+        pattern = 'v(?<tagVersion>[0-9].*)'
+        versionFormat = '${tagVersion}'
+    }
+    commit {
+        versionFormat = '${commit.short}'
+    }
+}
 ext {
     jcstressVersion = '0.5'
     jmhVersion = '1.20'
