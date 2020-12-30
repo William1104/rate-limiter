@@ -5,10 +5,9 @@ name: Java CI with Gradle
 
 on:
   push:
-    branches: [ develop ]
-  pull_request:
-    types: [ opened, synchronize, reopened ]
-    branches: [ develop ]
+    branches:
+      - develop
+      - master
 
 jobs:
   build:
@@ -22,23 +21,14 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v2
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
       - name: Cache Gradle packages
         uses: actions/cache@v2
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
-      - name: Build and analyze
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: gradle build sonarqube --info
+      - name: Build
+        run: gradle build --info
       - name: Publish
         env:
           GITHUB_ACTOR: ${{ secrets.GITHUB_TOKEN }}
