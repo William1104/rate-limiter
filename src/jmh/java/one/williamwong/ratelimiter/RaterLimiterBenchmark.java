@@ -15,22 +15,22 @@ public class RaterLimiterBenchmark {
     @Group("thread_1")
     @GroupThreads(1)
     @Benchmark
-    public void thread_1(RateLimiterWrapper rateLimiterWrapper) throws InterruptedException {
-        rateLimiterWrapper.rateLimiter.acquire();
+    public void thread_1(RateLimiterWrapper rateLimiterWrapper) throws Exception {
+        rateLimiterWrapper.rateLimiter.invoke(() -> 0);
     }
 
     @Group("thread_10")
     @GroupThreads(10)
     @Benchmark
-    public void thread_10(RateLimiterWrapper rateLimiterWrapper) throws InterruptedException {
-        rateLimiterWrapper.rateLimiter.acquire();
+    public void thread_10(RateLimiterWrapper rateLimiterWrapper) throws Exception {
+        rateLimiterWrapper.rateLimiter.invoke(() -> 0);
     }
 
     @Group("thread_100")
     @GroupThreads(100)
     @Benchmark
-    public void thread_100(RateLimiterWrapper rateLimiterWrapper) throws InterruptedException {
-        rateLimiterWrapper.rateLimiter.acquire();
+    public void thread_100(RateLimiterWrapper rateLimiterWrapper) throws Exception {
+        rateLimiterWrapper.rateLimiter.invoke(() -> 0);
     }
 
     @State(Scope.Group)
@@ -43,12 +43,12 @@ public class RaterLimiterBenchmark {
         })
         private String rateLimiterType;
 
-        private IRateLimiter rateLimiter;
+        private RateLimiter rateLimiter;
 
         @Setup(Level.Iteration)
         public void setup() throws Exception {
-            final String packageName = IRateLimiter.class.getPackageName();
-            rateLimiter = (IRateLimiter) Class.forName(packageName + "." + rateLimiterType)
+            final String packageName = RateLimiter.class.getPackageName();
+            rateLimiter = (RateLimiter) Class.forName(packageName + "." + rateLimiterType)
                     .getConstructor(int.class, Duration.class)
                     .newInstance(1_000_000, Duration.ofMillis(1));
         }

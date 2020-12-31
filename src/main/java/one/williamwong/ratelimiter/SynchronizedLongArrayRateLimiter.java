@@ -2,24 +2,20 @@ package one.williamwong.ratelimiter;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.concurrent.Callable;
 
 import static java.lang.System.nanoTime;
-import static java.time.Instant.now;
 
-public class SynchronizedLongArrayRateLimiter implements IRateLimiter {
+public class SynchronizedLongArrayRateLimiter implements RateLimiter {
 
-    private final ISleeper sleeper;
+    private final Pauser pauser;
     private final long duration;
     private final long[] records;
     private final Object lock;
     private int pointer;
 
     public SynchronizedLongArrayRateLimiter(final int maxInvokes, final Duration duration) {
-        this(new Sleeper(), maxInvokes, duration);
-    }
-
-    public SynchronizedLongArrayRateLimiter(final ISleeper sleeper, final int maxInvokes, final Duration duration) {
-        this.sleeper = sleeper;
+        this.pauser = Pauser.INSTANCE;
         this.duration = duration.toNanos();
         this.records = new long[maxInvokes];
         this.lock = new Object();
@@ -27,18 +23,26 @@ public class SynchronizedLongArrayRateLimiter implements IRateLimiter {
     }
 
     @Override
-    public void acquire() throws InterruptedException {
+    public <T> T invoke(Callable<T> callable) throws Exception {
         synchronized (lock) {
-            long now = nanoTime();
-            if (records[pointer] != 0) {
-                long awayFromLastRecord = now - records[pointer];
-                if (awayFromLastRecord < duration) {
-                    sleeper.sleepTill(now().plusNanos(duration - awayFromLastRecord));
-                    now = nanoTime();
-                }
+            try {
+                pauseIfRequired();
+                return callable.call();
+            } finally {
+                record(nanoTime());
             }
-            records[pointer] = now;
-            pointer = (pointer + 1) % records.length;
+        }
+    }
+
+    @Override
+    public void invoke(Runnable runnable) throws Exception {
+        synchronized (lock) {
+            try {
+                pauseIfRequired();
+                runnable.run();
+            } finally {
+                record(nanoTime());
+            }
         }
     }
 
@@ -48,5 +52,19 @@ public class SynchronizedLongArrayRateLimiter implements IRateLimiter {
             this.pointer = 0;
         }
     }
+
+    private void pauseIfRequired() throws InterruptedException {
+        long now = nanoTime();
+        long referenceRecord = records[pointer];
+        if (referenceRecord != 0 && (now - referenceRecord) < duration) {
+            pauser.pauseUntil(duration + referenceRecord);
+        }
+    }
+
+    private void record(long now) {
+        records[pointer] = now;
+        pointer = (pointer + 1) % records.length;
+    }
+
 
 }
