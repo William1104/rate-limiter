@@ -45,7 +45,7 @@ class RateLimiterTest {
             StampLockLongArrayRateLimiter.class,
             SynchronizedLongArrayRateLimiter.class,
     })
-    void within_rate_limit(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
+    void test_invoke_when_invocation_rate_within_limit(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
         final RateLimiter rateLimiter = create(rateLimiterClass, LIMIT, DURATION);
 
@@ -67,7 +67,7 @@ class RateLimiterTest {
             SynchronizedLongArrayRateLimiter.class,
             StampLockLongArrayRateLimiter.class,
     })
-    void excess_rate_limit(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
+    void test_invoke_when_invocation_rate_excess_limit(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
         final RateLimiter rateLimiter = create(rateLimiterClass, LIMIT, DURATION);
 
@@ -101,7 +101,7 @@ class RateLimiterTest {
             StampLockLongArrayRateLimiter.class,
             SynchronizedLongArrayRateLimiter.class,
     })
-    void various_rate_limit(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
+    void test_invoke_when_invocation_rate_with_various_speed(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
 
         // setup rate limiter and sleeper
         final Random random = new Random(System.nanoTime());
@@ -124,7 +124,7 @@ class RateLimiterTest {
             StampLockLongArrayRateLimiter.class,
             SynchronizedLongArrayRateLimiter.class,
     })
-    void reset_could_clear_counts(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
+    void test_reset_which_can_reset_invocation_history(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
         final RateLimiter rateLimiter = create(rateLimiterClass, LIMIT, DURATION);
 
