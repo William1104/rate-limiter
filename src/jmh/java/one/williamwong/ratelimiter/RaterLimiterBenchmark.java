@@ -37,9 +37,7 @@ public class RaterLimiterBenchmark {
     public static class RateLimiterWrapper {
         @Param({"GuavaRateLimiter",
                 "StampLockLongArrayRateLimiter",
-                "StampLockInstantArrayRateLimiter",
                 "SynchronizedLongArrayRateLimiter",
-                "SynchronizedInstantArrayRateLimiter",
         })
         private String rateLimiterType;
 
@@ -47,7 +45,7 @@ public class RaterLimiterBenchmark {
 
         @Setup(Level.Iteration)
         public void setup() throws Exception {
-            final String packageName = RateLimiter.class.getPackageName();
+            final String packageName = "one.williamwong.ratelimiter";
             rateLimiter = (RateLimiter) Class.forName(packageName + "." + rateLimiterType)
                     .getConstructor(int.class, Duration.class)
                     .newInstance(1_000_000, Duration.ofMillis(1));
