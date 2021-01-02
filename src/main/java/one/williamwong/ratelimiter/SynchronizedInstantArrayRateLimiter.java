@@ -3,24 +3,21 @@ package one.williamwong.ratelimiter;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.concurrent.Callable;
 
 import static java.time.Duration.between;
 import static java.time.Instant.now;
 
-public class SynchronizedInstantArrayRateLimiter implements IRateLimiter {
+public class SynchronizedInstantArrayRateLimiter implements RateLimiter {
 
-    private final ISleeper sleeper;
+    private final Pauser pauser;
     private final Duration duration;
     private final Instant[] records;
     private final Object lock;
     private int pointer;
 
     public SynchronizedInstantArrayRateLimiter(int maxInvokes, Duration duration) {
-        this(new Sleeper(), maxInvokes, duration);
-    }
-
-    public SynchronizedInstantArrayRateLimiter(final ISleeper sleeper, int maxInvokes, Duration duration) {
-        this.sleeper = sleeper;
+        this.pauser = Pauser.INSTANCE;
         this.duration = duration;
         this.records = new Instant[maxInvokes];
         this.lock = new Object();
@@ -28,16 +25,26 @@ public class SynchronizedInstantArrayRateLimiter implements IRateLimiter {
     }
 
     @Override
-    public void acquire() throws InterruptedException {
+    public <T> T invoke(final Callable<T> callable) throws Exception {
         synchronized (lock) {
-            Instant now = now();
-            if (records[pointer] != null &&
-                    between(records[pointer], now).compareTo(duration) < 0) {
-                sleeper.sleepTill(records[pointer].plus(duration));
-                now = now();
+            try {
+                pauseIfRequired();
+                return callable.call();
+            } finally {
+                record(now());
             }
-            records[pointer] = now;
-            pointer = (pointer + 1) % records.length;
+        }
+    }
+
+    @Override
+    public void invoke(final Runnable runnable) throws Exception {
+        synchronized (lock) {
+            try {
+                pauseIfRequired();
+                runnable.run();
+            } finally {
+                record(now());
+            }
         }
     }
 
@@ -46,6 +53,19 @@ public class SynchronizedInstantArrayRateLimiter implements IRateLimiter {
             Arrays.fill(records, null);
             this.pointer = 0;
         }
+    }
+
+    private void pauseIfRequired() throws InterruptedException {
+        Instant now = now();
+        if (records[pointer] != null &&
+                between(records[pointer], now).compareTo(duration) < 0) {
+            pauser.pauseUntil(records[pointer].plus(duration));
+        }
+    }
+
+    private void record(Instant now) {
+        records[pointer] = now;
+        pointer = (pointer + 1) % records.length;
     }
 
 }

@@ -65,6 +65,7 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-params:${junit5Version}"
     testImplementation "org.mockito:mockito-core:${mockitoVersion}"
     testImplementation "org.assertj:assertj-core:${assertJVersion}"
+    testImplementation "com.google.guava:guava:${guavaVersion}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junit5Version}"
     jcstress "org.openjdk.jcstress:jcstress-core:${jcstressVersion}"
     jcstress "org.mockito:mockito-core:${mockitoVersion}"
@@ -116,8 +117,6 @@ jmh {
 
 jcstress {
     jvmArgs = '-server -XX:+UnlockDiagnosticVMOptions -XX:+UseNUMA'
-    concurrency = 100
-    verbose = true
 }
 
 java {
