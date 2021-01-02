@@ -9,21 +9,14 @@ public interface RateLimiter {
 
     /**
      * Assume the RateLimiter is created with N max invokes with T duration.
-     * If there are already N invokes in the last T' duration where T' &lt; T, then the this method will be blocked
-     * for (T - T'). If T' invoke T, then the method return immediately.
+     * If there are already N invokes in the last T' duration where T' &lt; T,
+     * then the this method will be blocked for (T - T').
+     * If T' invoke T, then the method return immediately.
      *
-     * @throws InterruptedException
+     * @return the release time (measured with System.nanoTime())
+     * @throws InterruptedException if interrupted when the invocation is paused.
      */
-    <T> T invoke(Callable<T> callable) throws Exception;
-
-    /**
-     * Assume the RateLimiter is created with N max invokes with T duration.
-     * If there are already N invokes in the last T' duration where T' &lt; T, then the this method will be blocked
-     * for (T - T'). If T' invoke T, then the method return immediately.
-     *
-     * @throws InterruptedException
-     */
-    void invoke(Runnable runnable) throws Exception;
+    long invoke() throws InterruptedException;
 
     /**
      * Reset all historical records.

@@ -1,19 +1,15 @@
 package one.williamwong.ratelimiter;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,19 +27,47 @@ class RateLimiterTest {
                 .newInstance(limit, duration);
     }
 
-    private static void assertEmitTimesDoesNotExcessRateLimit(List<Long> emitTimes, int maxInvokes, long duration) {
-        // calculate the time different between LIMIT calls.
-        // the time difference between them should be bigger than DURATION
-        for (int i = 0; i < emitTimes.size() - maxInvokes; i++) {
-            final long timeTook = emitTimes.get(i + maxInvokes) - emitTimes.get(i);
-            assertThat(timeTook).isGreaterThanOrEqualTo(duration);
+    /**
+     * This method asserts the emitted rate should be lower than maxInvokes/duration.
+     * However, as there is a little time difference between the measured emit time and actual time released
+     * by a rate limiter, jitter could happen.
+     * Therefore, this method accept a little percentage of calls happened in a higher rate.
+     *
+     * @param emitTimes
+     * @param maxInvokes
+     * @param duration
+     */
+    private static void assertEmitTimesDoesNotExcessRateLimit(
+            final long[] emitTimes,
+            final int maxInvokes,
+            final long duration,
+            final int percentageOfJitter) {
+
+        Arrays.sort(emitTimes);
+
+        long numOfJitter = 0;
+        for (int i = 0; i < emitTimes.length - maxInvokes; i++) {
+            final long timeTook = emitTimes[i + maxInvokes] - emitTimes[i];
+            if (timeTook < duration) {
+                numOfJitter++;
+            }
         }
+        Assertions.assertThat(numOfJitter)
+                .describedAs("number of jitter (emit rate higher than expected) is more than %s percentage")
+                .isLessThanOrEqualTo(emitTimes.length * percentageOfJitter / 100);
+    }
+
+    private static void assertEmitTimesDoesNotExcessRateLimit(
+            final long[] emitTimes,
+            final int maxInvokes,
+            final long duration) {
+        assertEmitTimesDoesNotExcessRateLimit(emitTimes, maxInvokes, duration, 0);
     }
 
     @ParameterizedTest
     @ValueSource(classes = {
-            StampLockLongArrayRateLimiter.class,
-            SynchronizedLongArrayRateLimiter.class,
+            StampLockRateLimiter.class,
+            SynchronizedRateLimiter.class,
     })
     void test_invoke_when_invocation_rate_within_limit(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
@@ -55,17 +79,21 @@ class RateLimiterTest {
         final long sleepInterval = DURATION.toNanos() / LIMIT;
         for (int i = 0; i < LIMIT * 2; i++) {
             NANOSECONDS.sleep(sleepInterval);
-            rateLimiter.invoke(() -> emitTimes.add(System.nanoTime()));
+            rateLimiter.invoke();
+            emitTimes.add(System.nanoTime());
         }
 
         // make sure the rate limiter slow down the speed.
-        assertEmitTimesDoesNotExcessRateLimit(emitTimes, LIMIT, DURATION.toNanos());
+        assertEmitTimesDoesNotExcessRateLimit(
+                emitTimes.stream().mapToLong($ -> $).toArray(),
+                LIMIT,
+                DURATION.toNanos());
     }
 
     @ParameterizedTest
     @ValueSource(classes = {
-            SynchronizedLongArrayRateLimiter.class,
-            StampLockLongArrayRateLimiter.class,
+            SynchronizedRateLimiter.class,
+            StampLockRateLimiter.class,
     })
     void test_invoke_when_invocation_rate_excess_limit(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
@@ -78,11 +106,11 @@ class RateLimiterTest {
         final List<Future<Long>> futures = new ArrayList<>();
         final LinkedBlockingQueue<Long> emitTimes = new LinkedBlockingQueue<>();
         for (int i = 0; i < LIMIT * 50; i++) {
-            futures.add(executor.submit(() -> rateLimiter.invoke(() -> {
-                long current = System.nanoTime();
+            futures.add(executor.submit(() -> {
+                long current = rateLimiter.invoke();
                 emitTimes.add(current);
                 return current;
-            })));
+            }));
         }
 
         for (Future<Long> future : futures) {
@@ -91,15 +119,15 @@ class RateLimiterTest {
 
         // make sure the rate limiter slow down the speed to LIMIT/DURATION.
         assertEmitTimesDoesNotExcessRateLimit(
-                emitTimes.stream().collect(Collectors.toList()),
+                emitTimes.stream().mapToLong($ -> $).toArray(),
                 LIMIT,
-                DURATION.toNanos());
+                DURATION.minus(Duration.ofNanos(100_000)).toNanos(), 1);
     }
 
     @ParameterizedTest
     @ValueSource(classes = {
-            StampLockLongArrayRateLimiter.class,
-            SynchronizedLongArrayRateLimiter.class,
+            StampLockRateLimiter.class,
+            SynchronizedRateLimiter.class,
     })
     void test_invoke_when_invocation_rate_with_various_speed(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
 
@@ -113,16 +141,20 @@ class RateLimiterTest {
         final int maxSleepInterval = (int) (DURATION.toNanos() / LIMIT * 2);
         for (int i = 0; i < LIMIT * 3; i++) {
             NANOSECONDS.sleep(random.nextInt(maxSleepInterval));
-            rateLimiter.invoke(() -> emitTimes.add(System.nanoTime()));
+            rateLimiter.invoke();
+            emitTimes.add(System.nanoTime());
         }
 
-        assertEmitTimesDoesNotExcessRateLimit(emitTimes, LIMIT, DURATION.toNanos());
+        assertEmitTimesDoesNotExcessRateLimit(
+                emitTimes.stream().mapToLong($ -> $).toArray(),
+                LIMIT,
+                DURATION.toNanos());
     }
 
     @ParameterizedTest
     @ValueSource(classes = {
-            StampLockLongArrayRateLimiter.class,
-            SynchronizedLongArrayRateLimiter.class,
+            StampLockRateLimiter.class,
+            SynchronizedRateLimiter.class,
     })
     void test_reset_which_can_reset_invocation_history(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
@@ -131,10 +163,9 @@ class RateLimiterTest {
         // execute multiple 'invoke'
         // no sleep time between invocation. but all counter should be 'reset' after LIMIT of invocation.
         final long startTime = System.currentTimeMillis();
-        final List<Instant> emitTimes = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < LIMIT; j++) {
-                rateLimiter.invoke(() -> emitTimes.add(Instant.now()));
+                rateLimiter.invoke();
             }
             rateLimiter.reset();
         }
