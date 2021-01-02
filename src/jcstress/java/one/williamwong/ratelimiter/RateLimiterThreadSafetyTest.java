@@ -88,65 +88,6 @@ public class RateLimiterThreadSafetyTest {
     @Description("Test race on concurrent invoke")
     @Outcome(id = "null", expect = ACCEPTABLE, desc = "all records are increasing")
     @Outcome(id = ".*", expect = FORBIDDEN, desc = "hit exception during invoke")
-    public static class StampLockInstantArrayRateLimiterInvokeTest {
-
-        @Actor
-        public void actor1(StampLockInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor2(StampLockInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor3(StampLockInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor4(StampLockInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor5(StampLockInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor6(StampLockInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor7(StampLockInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor8(StampLockInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void checkActor(StampLockInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            checkEmittedTimes(wrapper, result);
-        }
-
-        @State
-        public static class StampLockInstantArrayRateLimiterWrapper extends RateLimiterWrapper<StampLockInstantArrayRateLimiter> {
-            StampLockInstantArrayRateLimiterWrapper() {
-                super(new StampLockInstantArrayRateLimiter(MAX_INVOKES, DURATION), 8);
-            }
-        }
-    }
-
-    @JCStressTest
-    @Description("Test race on concurrent invoke")
-    @Outcome(id = "null", expect = ACCEPTABLE, desc = "all records are increasing")
-    @Outcome(id = ".*", expect = FORBIDDEN, desc = "hit exception during invoke")
     public static class StampLockLongArrayRateLimiterInvokeTest {
 
         @Actor
@@ -198,65 +139,6 @@ public class RateLimiterThreadSafetyTest {
         public static class StampLockLongArrayRateLimiterWrapper extends RateLimiterWrapper<StampLockLongArrayRateLimiter> {
             StampLockLongArrayRateLimiterWrapper() {
                 super(new StampLockLongArrayRateLimiter(MAX_INVOKES, DURATION), 8);
-            }
-        }
-    }
-
-    @JCStressTest
-    @Description("Test race on concurrent invoke")
-    @Outcome(id = "null", expect = ACCEPTABLE, desc = "all records are increasing")
-    @Outcome(id = ".*", expect = FORBIDDEN, desc = "hit exception during invoke")
-    public static class SynchronizedInstantArrayRateLimiterInvokeTest {
-
-        @Actor
-        public void actor1(SynchronizedInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor2(SynchronizedInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor3(SynchronizedInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor4(SynchronizedInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor5(SynchronizedInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor6(SynchronizedInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor7(SynchronizedInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void actor8(SynchronizedInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            invoke(wrapper, result);
-        }
-
-        @Actor
-        public void checkActor(SynchronizedInstantArrayRateLimiterWrapper wrapper, L_Result result) {
-            checkEmittedTimes(wrapper, result);
-        }
-
-        @State
-        public static class SynchronizedInstantArrayRateLimiterWrapper extends RateLimiterWrapper<SynchronizedInstantArrayRateLimiter> {
-            SynchronizedInstantArrayRateLimiterWrapper() {
-                super(new SynchronizedInstantArrayRateLimiter(MAX_INVOKES, DURATION), 8);
             }
         }
     }

@@ -43,9 +43,7 @@ class RateLimiterTest {
     @ParameterizedTest
     @ValueSource(classes = {
             StampLockLongArrayRateLimiter.class,
-            StampLockInstantArrayRateLimiter.class,
             SynchronizedLongArrayRateLimiter.class,
-            SynchronizedInstantArrayRateLimiter.class
     })
     void within_rate_limit(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
@@ -67,9 +65,7 @@ class RateLimiterTest {
     @ParameterizedTest
     @ValueSource(classes = {
             SynchronizedLongArrayRateLimiter.class,
-            SynchronizedInstantArrayRateLimiter.class,
             StampLockLongArrayRateLimiter.class,
-            StampLockInstantArrayRateLimiter.class,
     })
     void excess_rate_limit(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
@@ -103,9 +99,7 @@ class RateLimiterTest {
     @ParameterizedTest
     @ValueSource(classes = {
             StampLockLongArrayRateLimiter.class,
-            StampLockInstantArrayRateLimiter.class,
             SynchronizedLongArrayRateLimiter.class,
-            SynchronizedInstantArrayRateLimiter.class
     })
     void various_rate_limit(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
 
@@ -128,9 +122,7 @@ class RateLimiterTest {
     @ParameterizedTest
     @ValueSource(classes = {
             StampLockLongArrayRateLimiter.class,
-            StampLockInstantArrayRateLimiter.class,
             SynchronizedLongArrayRateLimiter.class,
-            SynchronizedInstantArrayRateLimiter.class
     })
     void reset_could_clear_counts(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
