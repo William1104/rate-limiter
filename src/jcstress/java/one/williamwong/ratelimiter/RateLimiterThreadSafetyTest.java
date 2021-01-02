@@ -4,19 +4,17 @@ import org.openjdk.jcstress.annotations.*;
 import org.openjdk.jcstress.infra.results.L_Result;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.time.Duration.between;
 import static org.openjdk.jcstress.annotations.Expect.ACCEPTABLE;
 import static org.openjdk.jcstress.annotations.Expect.FORBIDDEN;
 
 class RateLimiterWrapper<T extends RateLimiter> {
     private final T rateLimiter;
-    private final BlockingQueue<Instant> emitTimes;
+    private final BlockingQueue<Long> emitTimes;
     private final AtomicInteger numOfActiveActors;
 
     RateLimiterWrapper(T rateLimiter, int numOfActors) {
@@ -29,12 +27,12 @@ class RateLimiterWrapper<T extends RateLimiter> {
         }
     }
 
-    void verifyIfEmitTimeExcessExpectedRate(final int maxInvokes, final Duration duration) {
+    void verifyIfEmitTimeExcessExpectedRate(final int maxInvokes, final long duration) {
         while (numOfActiveActors.get() > 0) {
-            final Instant[] instants = emitTimes.toArray(new Instant[0]);
+            final long[] instants = emitTimes.stream().mapToLong($ -> $).toArray();
             for (int i = 0; i < instants.length - maxInvokes; i++) {
-                final Duration timeTook = between(instants[i], instants[i + maxInvokes]);
-                if (timeTook.compareTo(duration) < 0) {
+                final long timeTook = instants[i + maxInvokes] - instants[i];
+                if (timeTook < duration) {
                     throw new IllegalStateException("There are " + maxInvokes + " invokes took " + timeTook);
                 } else {
                     emitTimes.remove();
@@ -47,8 +45,8 @@ class RateLimiterWrapper<T extends RateLimiter> {
         numOfActiveActors.decrementAndGet();
     }
 
-    void record(Instant instant) {
-        emitTimes.add(instant);
+    void record() {
+        emitTimes.add(System.nanoTime());
     }
 
     T getRateLimiter() {
@@ -58,7 +56,6 @@ class RateLimiterWrapper<T extends RateLimiter> {
 
 public class RateLimiterThreadSafetyTest {
 
-    public static final Random RANDOM = new Random(System.nanoTime());
     public static final int MAX_INVOKES = 1000;
     public static final Duration DURATION = Duration.ofMillis(1);
 
@@ -67,7 +64,7 @@ public class RateLimiterThreadSafetyTest {
         final RateLimiter rateLimiter = wrapper.getRateLimiter();
         try {
             for (int i = 0; i < MAX_INVOKES; i++) {
-                rateLimiter.invoke(() -> wrapper.record(Instant.now()));
+                rateLimiter.invoke(wrapper::record);
             }
         } catch (Exception e) {
             result.r1 = e;
@@ -78,7 +75,7 @@ public class RateLimiterThreadSafetyTest {
     private static <T extends RateLimiter>
     void checkEmittedTimes(RateLimiterWrapper<T> wrapper, L_Result result) {
         try {
-            wrapper.verifyIfEmitTimeExcessExpectedRate(MAX_INVOKES, DURATION.minus(Duration.ofMillis(1)));
+            wrapper.verifyIfEmitTimeExcessExpectedRate(MAX_INVOKES, DURATION.toNanos());
         } catch (Exception e) {
             result.r1 = e;
         }

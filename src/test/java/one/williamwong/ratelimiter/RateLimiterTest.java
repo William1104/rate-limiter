@@ -6,6 +6,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -14,7 +15,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
-import static java.time.Duration.between;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,11 +31,11 @@ class RateLimiterTest {
                 .newInstance(limit, duration);
     }
 
-    private static void assertEmitTimesDoesNotExcessRateLimit(List<Instant> emitTimes, int maxInvokes, Duration duration) {
+    private static void assertEmitTimesDoesNotExcessRateLimit(List<Long> emitTimes, int maxInvokes, long duration) {
         // calculate the time different between LIMIT calls.
         // the time difference between them should be bigger than DURATION
         for (int i = 0; i < emitTimes.size() - maxInvokes; i++) {
-            final Duration timeTook = between(emitTimes.get(i), emitTimes.get(i + maxInvokes));
+            final long timeTook = emitTimes.get(i + maxInvokes) - emitTimes.get(i);
             assertThat(timeTook).isGreaterThanOrEqualTo(duration);
         }
     }
@@ -51,15 +51,15 @@ class RateLimiterTest {
 
         // execute multiple 'invoke'
         // interval between invoke is inverse of rate limit.
-        final List<Instant> emitTimes = new ArrayList<>();
+        final List<Long> emitTimes = new LinkedList<>();
         final long sleepInterval = DURATION.toNanos() / LIMIT;
         for (int i = 0; i < LIMIT * 2; i++) {
             NANOSECONDS.sleep(sleepInterval);
-            rateLimiter.invoke(() -> emitTimes.add(Instant.now()));
+            rateLimiter.invoke(() -> emitTimes.add(System.nanoTime()));
         }
 
         // make sure the rate limiter slow down the speed.
-        assertEmitTimesDoesNotExcessRateLimit(emitTimes, LIMIT, DURATION);
+        assertEmitTimesDoesNotExcessRateLimit(emitTimes, LIMIT, DURATION.toNanos());
     }
 
     @ParameterizedTest
@@ -75,17 +75,17 @@ class RateLimiterTest {
 
         // execute multiple 'invoke'
         // interval between invoke is less than inverse of rate limit.
-        final List<Future<Instant>> futures = new ArrayList<>();
-        final LinkedBlockingQueue<Instant> emitTimes = new LinkedBlockingQueue<>();
+        final List<Future<Long>> futures = new ArrayList<>();
+        final LinkedBlockingQueue<Long> emitTimes = new LinkedBlockingQueue<>();
         for (int i = 0; i < LIMIT * 50; i++) {
             futures.add(executor.submit(() -> rateLimiter.invoke(() -> {
-                Instant instant = Instant.now();
-                emitTimes.add(instant);
-                return instant;
+                long current = System.nanoTime();
+                emitTimes.add(current);
+                return current;
             })));
         }
 
-        for (Future<Instant> future : futures) {
+        for (Future<Long> future : futures) {
             future.get();
         }
 
@@ -93,7 +93,7 @@ class RateLimiterTest {
         assertEmitTimesDoesNotExcessRateLimit(
                 emitTimes.stream().collect(Collectors.toList()),
                 LIMIT,
-                DURATION.minus(Duration.ofMillis(2)));
+                DURATION.toNanos());
     }
 
     @ParameterizedTest
@@ -109,14 +109,14 @@ class RateLimiterTest {
 
         // execute multiple 'invoke'
         // interval between invoke is between 0ns and double of the inverse of rate limit.
-        final List<Instant> emitTimes = new ArrayList<>();
+        final List<Long> emitTimes = new LinkedList<>();
         final int maxSleepInterval = (int) (DURATION.toNanos() / LIMIT * 2);
         for (int i = 0; i < LIMIT * 3; i++) {
             NANOSECONDS.sleep(random.nextInt(maxSleepInterval));
-            rateLimiter.invoke(() -> emitTimes.add(Instant.now()));
+            rateLimiter.invoke(() -> emitTimes.add(System.nanoTime()));
         }
 
-        assertEmitTimesDoesNotExcessRateLimit(emitTimes, LIMIT, DURATION);
+        assertEmitTimesDoesNotExcessRateLimit(emitTimes, LIMIT, DURATION.toNanos());
     }
 
     @ParameterizedTest
