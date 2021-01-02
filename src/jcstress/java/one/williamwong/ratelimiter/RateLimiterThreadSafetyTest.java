@@ -4,7 +4,6 @@ import org.openjdk.jcstress.annotations.*;
 import org.openjdk.jcstress.infra.results.L_Result;
 
 import java.time.Duration;
-import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,11 +15,15 @@ class RateLimiterWrapper<T extends RateLimiter> {
     private final T rateLimiter;
     private final BlockingQueue<Long> emitTimes;
     private final AtomicInteger numOfActiveActors;
+    private final AtomicInteger numOfInvokes;
+    private final AtomicInteger numOfJitters;
 
     RateLimiterWrapper(T rateLimiter, int numOfActors) {
         try {
             this.rateLimiter = rateLimiter;
             this.numOfActiveActors = new AtomicInteger(numOfActors);
+            this.numOfInvokes = new AtomicInteger(0);
+            this.numOfJitters = new AtomicInteger(0);
             this.emitTimes = new LinkedBlockingDeque<>();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -33,11 +36,18 @@ class RateLimiterWrapper<T extends RateLimiter> {
             for (int i = 0; i < instants.length - maxInvokes; i++) {
                 final long timeTook = instants[i + maxInvokes] - instants[i];
                 if (timeTook < duration) {
-                    throw new IllegalStateException("There are " + maxInvokes + " invokes took " + timeTook);
-                } else {
-                    emitTimes.remove();
+                    numOfJitters.incrementAndGet();
                 }
+                emitTimes.remove();
             }
+        }
+    }
+
+    void verifyJitterPercentageOverThreshold(int threshold) {
+        int numOfJitterAsInt = numOfJitters.get();
+        int numOfInvokesAsInt = numOfInvokes.get();
+        if (numOfJitterAsInt * 100 > numOfInvokesAsInt * threshold) {
+            throw new IllegalStateException("" + numOfJitterAsInt + " of jitter happened in " + numOfInvokesAsInt + " invocation");
         }
     }
 
@@ -46,6 +56,7 @@ class RateLimiterWrapper<T extends RateLimiter> {
     }
 
     void record() {
+        numOfInvokes.incrementAndGet();
         emitTimes.add(System.nanoTime());
     }
 
@@ -64,7 +75,8 @@ public class RateLimiterThreadSafetyTest {
         final RateLimiter rateLimiter = wrapper.getRateLimiter();
         try {
             for (int i = 0; i < MAX_INVOKES; i++) {
-                rateLimiter.invoke(wrapper::record);
+                rateLimiter.invoke();
+                wrapper.record();
             }
         } catch (Exception e) {
             result.r1 = e;
@@ -76,6 +88,15 @@ public class RateLimiterThreadSafetyTest {
     void checkEmittedTimes(RateLimiterWrapper<T> wrapper, L_Result result) {
         try {
             wrapper.verifyIfEmitTimeExcessExpectedRate(MAX_INVOKES, DURATION.toNanos());
+        } catch (Exception e) {
+            result.r1 = e;
+        }
+    }
+
+    private static <T extends RateLimiter>
+    void checkJitterPercentage(RateLimiterWrapper<T> wrapper, L_Result result) {
+        try {
+            wrapper.verifyJitterPercentageOverThreshold(1);
         } catch (Exception e) {
             result.r1 = e;
         }
@@ -130,6 +151,11 @@ public class RateLimiterThreadSafetyTest {
         @Actor
         public void checkActor(StampLockLongArrayRateLimiterWrapper wrapper, L_Result result) {
             checkEmittedTimes(wrapper, result);
+        }
+
+        @Arbiter
+        public void finalCheckActor(StampLockLongArrayRateLimiterWrapper wrapper, L_Result result) {
+            checkJitterPercentage(wrapper, result);
         }
 
         @State
@@ -189,6 +215,11 @@ public class RateLimiterThreadSafetyTest {
         @Actor
         public void checkActor(SynchronizedLongArrayRateLimiterWrapper wrapper, L_Result result) {
             checkEmittedTimes(wrapper, result);
+        }
+
+        @Arbiter
+        public void finalCheckActor(SynchronizedLongArrayRateLimiterWrapper wrapper, L_Result result) {
+            checkJitterPercentage(wrapper, result);
         }
 
         @State

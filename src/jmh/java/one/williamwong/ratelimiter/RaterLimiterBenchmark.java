@@ -16,21 +16,21 @@ public class RaterLimiterBenchmark {
     @GroupThreads(1)
     @Benchmark
     public void thread_1(RateLimiterWrapper rateLimiterWrapper) throws Exception {
-        rateLimiterWrapper.rateLimiter.invoke(() -> 0);
+        rateLimiterWrapper.rateLimiter.invoke();
     }
 
     @Group("thread_10")
     @GroupThreads(10)
     @Benchmark
     public void thread_10(RateLimiterWrapper rateLimiterWrapper) throws Exception {
-        rateLimiterWrapper.rateLimiter.invoke(() -> 0);
+        rateLimiterWrapper.rateLimiter.invoke();
     }
 
     @Group("thread_100")
     @GroupThreads(100)
     @Benchmark
     public void thread_100(RateLimiterWrapper rateLimiterWrapper) throws Exception {
-        rateLimiterWrapper.rateLimiter.invoke(() -> 0);
+        rateLimiterWrapper.rateLimiter.invoke();
     }
 
     @State(Scope.Group)
@@ -48,7 +48,7 @@ public class RaterLimiterBenchmark {
             final String packageName = "one.williamwong.ratelimiter";
             rateLimiter = (RateLimiter) Class.forName(packageName + "." + rateLimiterType)
                     .getConstructor(int.class, Duration.class)
-                    .newInstance(1_000_000, Duration.ofMillis(1));
+                    .newInstance(1_000, Duration.ofNanos(500));
         }
 
         @TearDown(Level.Iteration)

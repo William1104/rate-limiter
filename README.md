@@ -1,10 +1,8 @@
 # rate-limiter
-A simple Rate Limiter implementation. It is capable to limit speed with interval less than a second. (eg no more than 1000 requests in 100ms)
+A simple Rate Limiter implementation. It is capable to limit speed with interval less than a second. (eg no more than 1000 requests in 100us)
 
-Currently, we have 4 implementations.  
-- StampLockInstantArrayRateLimiter
+Currently, there are two implementations.  
 - StampLockLongArrayRateLimiter 
-- SynchronizedInstantArrayRateLimiter
 - SynchronizedLongArrayRateLimiter
 
 # How to build the project with gradle

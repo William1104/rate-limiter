@@ -10,15 +10,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 class SimplePauser implements Pauser {
 
     @Override
-    public void pauseUntil(final Instant until) throws InterruptedException {
-        long pauseTime;
-        // Actual pause time  can be less than requested time.
-        while ((pauseTime = between(now(), until).toNanos()) > 0) {
-            NANOSECONDS.sleep(pauseTime);
-        }
-    }
-
-    @Override
     public void pauseUntil(final long until) throws InterruptedException {
         // Actual pause time  can be less than requested time.
         long pausedTime;

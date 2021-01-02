@@ -23,24 +23,11 @@ public class StampLockLongArrayRateLimiter implements RateLimiter {
         this.pointer = 0;
     }
 
-    @Override public <T> T invoke(Callable<T> callable) throws Exception {
+    @Override public void invoke() throws Exception {
         final long stamp = lock.writeLock();
         try {
-            pauseIfRequired();
-            return callable.call();
+            record(pauseIfRequired());
         } finally {
-            record(nanoTime());
-            lock.unlockWrite(stamp);
-        }
-    }
-
-    @Override public void invoke(Runnable runnable) throws Exception {
-        final long stamp = lock.writeLock();
-        try {
-            pauseIfRequired();
-            runnable.run();
-        } finally {
-            record(nanoTime());
             lock.unlockWrite(stamp);
         }
     }
@@ -55,12 +42,15 @@ public class StampLockLongArrayRateLimiter implements RateLimiter {
         }
     }
 
-    private void pauseIfRequired() throws InterruptedException {
+    private long pauseIfRequired() throws InterruptedException {
         long now = nanoTime();
         long referenceRecord = records[pointer];
         if (referenceRecord != 0 && (now - referenceRecord) < duration) {
-            pauser.pauseUntil(duration + referenceRecord);
+            long until = duration + referenceRecord;
+            pauser.pauseUntil(until);
+            return until;
         }
+        return now;
     }
 
     private void record(long now) {

@@ -23,42 +23,29 @@ public class SynchronizedLongArrayRateLimiter implements RateLimiter {
     }
 
     @Override
-    public <T> T invoke(Callable<T> callable) throws Exception {
+    public void invoke() throws Exception {
         synchronized (lock) {
-            try {
-                pauseIfRequired();
-                return callable.call();
-            } finally {
-                record(nanoTime());
-            }
+            record(pauseIfRequired());
         }
     }
 
     @Override
-    public void invoke(Runnable runnable) throws Exception {
-        synchronized (lock) {
-            try {
-                pauseIfRequired();
-                runnable.run();
-            } finally {
-                record(nanoTime());
-            }
-        }
-    }
-
-    @Override public void reset() {
+    public void reset() {
         synchronized (lock) {
             Arrays.fill(records, 0);
             this.pointer = 0;
         }
     }
 
-    private void pauseIfRequired() throws InterruptedException {
+    private long pauseIfRequired() throws InterruptedException {
         long now = nanoTime();
         long referenceRecord = records[pointer];
         if (referenceRecord != 0 && (now - referenceRecord) < duration) {
-            pauser.pauseUntil(duration + referenceRecord);
+            long until = duration + referenceRecord;
+            pauser.pauseUntil(until);
+            return until;
         }
+        return now;
     }
 
     private void record(long now) {

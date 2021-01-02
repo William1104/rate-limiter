@@ -12,10 +12,8 @@ interface Pauser {
     /**
      * Pause the execution until the given time
      *
-     * @param until
+     * @param until the execution is paused up to 'until' time. This 'until' time is measured with System.nanoTime().
      * @throws InterruptedException
      */
-    void pauseUntil(final Instant until) throws InterruptedException;
-
-    void pauseUntil(long nano) throws InterruptedException;
+    void pauseUntil(long until) throws InterruptedException;
 }

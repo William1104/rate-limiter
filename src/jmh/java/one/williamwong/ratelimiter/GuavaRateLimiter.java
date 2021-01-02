@@ -16,21 +16,13 @@ public class GuavaRateLimiter implements RateLimiter {
         this.guavaRateLimiter = com.google.common.util.concurrent.RateLimiter.create(maxInvokesInASecond);
     }
 
-    @Override public <T> T invoke(Callable<T> callable) throws Exception {
-        synchronized (lock) {
-            this.guavaRateLimiter.acquire();
-            return callable.call();
-        }
+    @Override
+    public void invoke() throws Exception {
+        this.guavaRateLimiter.acquire();
     }
 
-    @Override public void invoke(Runnable runnable) throws Exception {
-        synchronized (lock) {
-            this.guavaRateLimiter.acquire();
-            runnable.run();
-        }
-    }
-
-    @Override public void reset() {
+    @Override
+    public void reset() {
         synchronized (lock) {
             this.guavaRateLimiter = com.google.common.util.concurrent.RateLimiter.create(maxInvokesInASecond);
         }
