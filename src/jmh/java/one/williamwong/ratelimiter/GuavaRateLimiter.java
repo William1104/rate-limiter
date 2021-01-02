@@ -3,6 +3,8 @@ package one.williamwong.ratelimiter;
 import java.time.Duration;
 import java.util.concurrent.Callable;
 
+import static java.lang.System.nanoTime;
+
 public class GuavaRateLimiter implements RateLimiter {
 
     private final double maxInvokesInASecond;
@@ -17,8 +19,9 @@ public class GuavaRateLimiter implements RateLimiter {
     }
 
     @Override
-    public void invoke() throws Exception {
+    public long invoke() throws InterruptedException {
         this.guavaRateLimiter.acquire();
+        return nanoTime();
     }
 
     @Override

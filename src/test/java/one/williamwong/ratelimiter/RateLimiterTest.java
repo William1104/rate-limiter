@@ -5,11 +5,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -47,6 +43,8 @@ class RateLimiterTest {
             final long duration,
             final int percentageOfJitter) {
 
+        Arrays.sort(emitTimes);
+
         long numOfJitter = 0;
         for (int i = 0; i < emitTimes.length - maxInvokes; i++) {
             final long timeTook = emitTimes[i + maxInvokes] - emitTimes[i];
@@ -68,8 +66,8 @@ class RateLimiterTest {
 
     @ParameterizedTest
     @ValueSource(classes = {
-            StampLockLongArrayRateLimiter.class,
-            SynchronizedLongArrayRateLimiter.class,
+            StampLockRateLimiter.class,
+            SynchronizedRateLimiter.class,
     })
     void test_invoke_when_invocation_rate_within_limit(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
@@ -94,8 +92,8 @@ class RateLimiterTest {
 
     @ParameterizedTest
     @ValueSource(classes = {
-            SynchronizedLongArrayRateLimiter.class,
-            StampLockLongArrayRateLimiter.class,
+            SynchronizedRateLimiter.class,
+            StampLockRateLimiter.class,
     })
     void test_invoke_when_invocation_rate_excess_limit(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper
@@ -109,8 +107,7 @@ class RateLimiterTest {
         final LinkedBlockingQueue<Long> emitTimes = new LinkedBlockingQueue<>();
         for (int i = 0; i < LIMIT * 50; i++) {
             futures.add(executor.submit(() -> {
-                rateLimiter.invoke();
-                long current = System.nanoTime();
+                long current = rateLimiter.invoke();
                 emitTimes.add(current);
                 return current;
             }));
@@ -124,14 +121,13 @@ class RateLimiterTest {
         assertEmitTimesDoesNotExcessRateLimit(
                 emitTimes.stream().mapToLong($ -> $).toArray(),
                 LIMIT,
-                DURATION.minus(Duration.ofNanos(100_000)).toNanos(),
-                1);
+                DURATION.minus(Duration.ofNanos(100_000)).toNanos(), 1);
     }
 
     @ParameterizedTest
     @ValueSource(classes = {
-            StampLockLongArrayRateLimiter.class,
-            SynchronizedLongArrayRateLimiter.class,
+            StampLockRateLimiter.class,
+            SynchronizedRateLimiter.class,
     })
     void test_invoke_when_invocation_rate_with_various_speed(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
 
@@ -157,8 +153,8 @@ class RateLimiterTest {
 
     @ParameterizedTest
     @ValueSource(classes = {
-            StampLockLongArrayRateLimiter.class,
-            SynchronizedLongArrayRateLimiter.class,
+            StampLockRateLimiter.class,
+            SynchronizedRateLimiter.class,
     })
     void test_reset_which_can_reset_invocation_history(final Class<? extends RateLimiter> rateLimiterClass) throws Exception {
         // setup rate limiter and sleeper

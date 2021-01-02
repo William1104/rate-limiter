@@ -36,8 +36,8 @@ public class RaterLimiterBenchmark {
     @State(Scope.Group)
     public static class RateLimiterWrapper {
         @Param({"GuavaRateLimiter",
-                "StampLockLongArrayRateLimiter",
-                "SynchronizedLongArrayRateLimiter",
+                "StampLockRateLimiter",
+                "SynchronizedRateLimiter",
         })
         private String rateLimiterType;
 

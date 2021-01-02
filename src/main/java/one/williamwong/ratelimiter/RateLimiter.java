@@ -13,9 +13,10 @@ public interface RateLimiter {
      * then the this method will be blocked for (T - T').
      * If T' invoke T, then the method return immediately.
      *
-     * @throws Exception
+     * @return the release time (measured with System.nanoTime())
+     * @throws InterruptedException if interrupted when the invocation is paused.
      */
-    void invoke() throws Exception;
+    long invoke() throws InterruptedException;
 
     /**
      * Reset all historical records.

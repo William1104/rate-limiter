@@ -159,9 +159,9 @@ public class RateLimiterThreadSafetyTest {
         }
 
         @State
-        public static class StampLockLongArrayRateLimiterWrapper extends RateLimiterWrapper<StampLockLongArrayRateLimiter> {
+        public static class StampLockLongArrayRateLimiterWrapper extends RateLimiterWrapper<StampLockRateLimiter> {
             StampLockLongArrayRateLimiterWrapper() {
-                super(new StampLockLongArrayRateLimiter(MAX_INVOKES, DURATION), 8);
+                super(new StampLockRateLimiter(MAX_INVOKES, DURATION), 8);
             }
         }
     }
@@ -223,9 +223,9 @@ public class RateLimiterThreadSafetyTest {
         }
 
         @State
-        public static class SynchronizedLongArrayRateLimiterWrapper extends RateLimiterWrapper<SynchronizedLongArrayRateLimiter> {
+        public static class SynchronizedLongArrayRateLimiterWrapper extends RateLimiterWrapper<SynchronizedRateLimiter> {
             SynchronizedLongArrayRateLimiterWrapper() {
-                super(new SynchronizedLongArrayRateLimiter(MAX_INVOKES, DURATION), 8);
+                super(new SynchronizedRateLimiter(MAX_INVOKES, DURATION), 8);
             }
         }
     }
