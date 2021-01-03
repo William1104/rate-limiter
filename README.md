@@ -2,8 +2,8 @@
 A simple Rate Limiter implementation. It is capable to limit speed with interval less than a second. (eg no more than 1000 requests in 100us)
 
 Currently, there are two implementations.  
-- StampLockLongArrayRateLimiter 
-- SynchronizedLongArrayRateLimiter
+- StampLockRateLimiter 
+- SynchronizedRateLimiter
 
 # How to build the project with gradle
 > gradle build
@@ -19,17 +19,14 @@ On a laptop with CPU ( Intel(R) Core(TM) i5-1035G4 CPU @ 1.10GHz) with 8G physic
 
 With option:  -server, -XX:+UnlockDiagnosticVMOptions, -XX:+UseNUMA, -XX:-UseLWPSynchronization
 
-|Benchmark                        |                   (rateLimiterType) |  Mode | Cnt |     Score |     Error |  Units |
-|---------------------------------|-------------------------------------|-------|-----|-----------|-----------|--------|
-|RaterLimiterBenchmark.thread_1   |       StampLockLongArrayRateLimiter | thrpt |  90 | 23573.282 |▒  364.739 | ops/ms |
-|RaterLimiterBenchmark.thread_1   |    StampLockInstantArrayRateLimiter | thrpt |  90 | 23062.260 |▒ 1035.395 | ops/ms |
-|RaterLimiterBenchmark.thread_1   |    SynchronizedLongArrayRateLimiter | thrpt |  90 | 34667.411 |▒  246.003 | ops/ms |
-|RaterLimiterBenchmark.thread_1   | SynchronizedInstantArrayRateLimiter | thrpt |  90 | 36426.369 |▒ 1248.360 | ops/ms |
-|RaterLimiterBenchmark.thread_10  |       StampLockLongArrayRateLimiter | thrpt |  90 | 13592.158 |▒   76.319 | ops/ms |
-|RaterLimiterBenchmark.thread_10  |    StampLockInstantArrayRateLimiter | thrpt |  90 | 14564.306 |▒  474.613 | ops/ms |
-|RaterLimiterBenchmark.thread_10  |    SynchronizedLongArrayRateLimiter | thrpt |  90 | 13524.610 |▒  155.850 | ops/ms |
-|RaterLimiterBenchmark.thread_10  | SynchronizedInstantArrayRateLimiter | thrpt |  90 | 13080.967 |▒  309.736 | ops/ms |
-|RaterLimiterBenchmark.thread_100 |       StampLockLongArrayRateLimiter | thrpt |  90 | 13224.529 |▒  459.035 | ops/ms |
-|RaterLimiterBenchmark.thread_100 |    StampLockInstantArrayRateLimiter | thrpt |  90 | 13890.278 |▒  456.182 | ops/ms |
-|RaterLimiterBenchmark.thread_100 |    SynchronizedLongArrayRateLimiter | thrpt |  90 | 12672.925 |▒  314.118 | ops/ms |
-|RaterLimiterBenchmark.thread_100 | SynchronizedInstantArrayRateLimiter | thrpt |  90 | 12245.120 |▒  296.395 | ops/ms |
+|Benchmark                        |       (rateLimiterType) |  Mode | Cnt |     Score |     Error |  Units |
+|---------------------------------|-------------------------|-------|-----|-----------|-----------|--------|
+|RaterLimiterBenchmark.thread_1   |        GuavaRateLimiter | thrpt |  15 |  6567.358 |▒  135.104 | ops/ms |
+|RaterLimiterBenchmark.thread_1   |    StampLockRateLimiter | thrpt |  15 | 10612.681 |▒  207.762 | ops/ms |
+|RaterLimiterBenchmark.thread_1   | SynchronizedRateLimiter | thrpt |  15 | 14597.511 |▒  435.532 | ops/ms |
+|RaterLimiterBenchmark.thread_10  |        GuavaRateLimiter | thrpt |  15 |  4733.286 |▒ 1874.901 | ops/ms |
+|RaterLimiterBenchmark.thread_10  |    StampLockRateLimiter | thrpt |  15 | 17003.344 |▒  786.402 | ops/ms |
+|RaterLimiterBenchmark.thread_10  | SynchronizedRateLimiter | thrpt |  15 | 13178.993 |▒  690.287 | ops/ms |
+|RaterLimiterBenchmark.thread_100 |        GuavaRateLimiter | thrpt |  15 |  6484.510 |▒  402.729 | ops/ms |
+|RaterLimiterBenchmark.thread_100 |    StampLockRateLimiter | thrpt |  15 | 17459.163 |▒  602.203 | ops/ms |
+|RaterLimiterBenchmark.thread_100 | SynchronizedRateLimiter | thrpt |  15 | 11796.656 |▒ 2558.414 | ops/ms |
