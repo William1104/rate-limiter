@@ -47,5 +47,3 @@ jobs:
         run: gradle build sonarqube --info
       - name: Execute Jcstress
         run: gradle jcstress --info
-      - name: Executere JMH
-        run: gradle jmh --info
