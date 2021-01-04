@@ -1,17 +1,18 @@
 package one.williamwong.ratelimiter;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.concurrent.Callable;
-
-import static java.lang.System.nanoTime;
 
 public class SynchronizedRateLimiter extends AbstractRateLimiter {
 
     private final Object lock;
 
     public SynchronizedRateLimiter(final int maxInvokes, final Duration duration) {
-        super(maxInvokes, duration);
+        super(maxInvokes, duration, 1);
+        this.lock = new Object();
+    }
+
+    public SynchronizedRateLimiter(final int maxInvokes, final Duration duration, final int density) {
+        super(maxInvokes, duration, density);
         this.lock = new Object();
     }
 
