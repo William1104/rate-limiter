@@ -13,8 +13,8 @@ public class StampLockRateLimiter extends AbstractRateLimiter {
         this.lock = new StampedLock();
     }
 
-    public StampLockRateLimiter(int maxInvokes, Duration duration, int density) {
-        super(maxInvokes, duration, density);
+    public StampLockRateLimiter(int maxInvokes, Duration duration, int samplingInterval) {
+        super(maxInvokes, duration, samplingInterval);
         this.lock = new StampedLock();
     }
 

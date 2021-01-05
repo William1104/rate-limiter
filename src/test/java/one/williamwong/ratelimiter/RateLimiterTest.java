@@ -48,7 +48,7 @@ class RateLimiterTest {
             final long[] releaseTimes,
             final int maxInvokes,
             final long duration,
-            final int density,
+            final int samplingInterval,
             final int percentageOfJitter) {
 
         Arrays.sort(releaseTimes);
@@ -56,7 +56,7 @@ class RateLimiterTest {
         int numOfJitter = 0;
         for (int i = 0; i < releaseTimes.length - maxInvokes; i++) {
             final long timeTook = releaseTimes[i + maxInvokes] - releaseTimes[i];
-            if (timeTook < duration - duration / (maxInvokes / density)) {
+            if (timeTook < duration - duration / (maxInvokes / samplingInterval)) {
                 numOfJitter++;
             }
         }
@@ -69,8 +69,8 @@ class RateLimiterTest {
             final long[] releaseTimes,
             final int maxInvokes,
             final long duration,
-            final int density) {
-        assertEmitTimesDoesNotExcessRateLimit(releaseTimes, maxInvokes, duration, density, 0);
+            final int samplingInterval) {
+        assertEmitTimesDoesNotExcessRateLimit(releaseTimes, maxInvokes, duration, samplingInterval, 0);
     }
 
     @ParameterizedTest(name = "{index}: test_invoke_when_invocation_rate_within_limit({arguments})")
@@ -79,7 +79,7 @@ class RateLimiterTest {
             final RateLimiter rateLimiter,
             final int maxInvokes,
             final Duration duration,
-            final int density
+            final int samplingInterval
     ) throws Exception {
 
         // execute multiple 'invoke'
@@ -97,7 +97,7 @@ class RateLimiterTest {
                 releaseTimes.stream().mapToLong($ -> $).toArray(),
                 maxInvokes,
                 duration.toNanos(),
-                density);
+                samplingInterval);
     }
 
     @ParameterizedTest(name = "{index}: test_invoke_when_invocation_rate_excess_limit({arguments})")
@@ -106,7 +106,7 @@ class RateLimiterTest {
             final RateLimiter rateLimiter,
             final int maxInvokes,
             final Duration duration,
-            final int density) throws Exception {
+            final int samplingInterval) throws Exception {
 
         final ExecutorService executor = Executors.newFixedThreadPool(10);
 
@@ -132,7 +132,7 @@ class RateLimiterTest {
                 releaseTimes.stream().mapToLong($ -> $).toArray(),
                 maxInvokes,
                 duration.toNanos(),
-                density,
+                samplingInterval,
                 1);
     }
 
@@ -142,7 +142,7 @@ class RateLimiterTest {
             final RateLimiter rateLimiter,
             final int maxInvokes,
             final Duration duration,
-            final int density) throws Exception {
+            final int samplingInterval) throws Exception {
 
         // setup rate limiter and sleeper
         final Random random = new Random(nanoTime());
@@ -161,7 +161,7 @@ class RateLimiterTest {
                 releaseTimes.stream().mapToLong($ -> $).toArray(),
                 maxInvokes,
                 duration.toNanos(),
-                density);
+                samplingInterval);
     }
 
     @ParameterizedTest(name = "{index}: test_reset_which_can_reset_invocation_history({arguments})")
@@ -170,7 +170,7 @@ class RateLimiterTest {
             final RateLimiter rateLimiter,
             final int maxInvokes,
             final Duration duration,
-            final int density) throws Exception {
+            final int samplingInterval) throws Exception {
 
         // execute multiple 'invoke'
         // no sleep time between invocation. but all counter should be 'reset' after LIMIT of invocation.
