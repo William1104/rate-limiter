@@ -11,8 +11,8 @@ public class SynchronizedRateLimiter extends AbstractRateLimiter {
         this.lock = new Object();
     }
 
-    public SynchronizedRateLimiter(final int maxInvokes, final Duration duration, final int density) {
-        super(maxInvokes, duration, density);
+    public SynchronizedRateLimiter(final int maxInvokes, final Duration duration, final int samplingInterval) {
+        super(maxInvokes, duration, samplingInterval);
         this.lock = new Object();
     }
 
