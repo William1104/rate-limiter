@@ -1,46 +1,93 @@
 # Rate Limiter
 
-A simple Rate Limiter implementation. It limits number of invocations to be below _N_ within _T_ duration. If more than
-_N_ invocation already happened in last _T'_ duration, a rate limiter will block the current execution for _T - T'_.
+A simple Rate Limiter implementation. We define a rate as _N_ invocation in the last _T_ duration. That means a rate
+limiter cannot be invoked more than _N_ times in _T_ duration. If more than _N_ invocation already happened in last _T'_
+duration, a rate limiter will block the current execution for _T - T'_.
 
-Basically, the underlying implementation remembers the invocation time of last _N_ invocations. If the last N invocation
-happens within _T_, the execution should be blocked to slow down the execution.
+# Usage
 
-It is capable to limit speed with interval less than a second. (eg no more than 1000 requests in 100us)
+Following example showing how to limit to call ```SomeService.invoke(...)``` at most 1000 times in 1 second.
 
-![Alt text](./svg/test.svg)
-<img src="./svg/test.svg"/>
+```java
+import java.util.concurrent.TimeUnit;
 
-Currently, there are two implementations.
-- StampLockRateLimiter
-- SynchronizedRateLimiter
+import one.williamwong.ratelimiter.*;
 
-# How to build the project with gradle
+class Main {
+    private static Random random = new Random(System.nanoTime());
 
-> gradle build
+    public static void main(String[] args) {
+        // create a rate limiter
+        final RateLimiter rateLimiter = new SynchronizedRateLimiter(1000, Duration.ofSecons(1));
 
-# How to run JMH with gradle
+        for (int i = 0; i < 100_000; i++) {
+            // sleep for 0 - 1000 nanoseconds.
+            TimeUnit.NANOSECONDS.sleep(random.nextInt(1_000));
+            rateLimiter.invoke();
 
-> gradle jmh
+            // do whatever should be rate limited.
+            SomeService.invoke(....);
+        }
+    }
+}
+```
 
-# How to run JCSTRESS with gradle
+We can limit invocation rate with time-scale less than one second. For example, we can limit to call
+```SomeService.invoke(...)``` at most 1000 times in 1 microsecond with following example.
 
-> gradle jcstress
+```java
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
-# A sample JMH result
+import one.williamwong.ratelimiter.*;
 
-On a laptop with CPU ( Intel(R) Core(TM) i5-1035G4 CPU @ 1.10GHz) with 8G physical memory.
+class Main {
+    private static Random random = new Random(System.nanoTime());
 
-With option:  -server, -XX:+UnlockDiagnosticVMOptions, -XX:+UseNUMA, -XX:-UseLWPSynchronization
+    public static void main(String[] args) {
+        // create a rate limiter
+        final RateLimiter rateLimiter = new SynchronizedRateLimiter(1000, Duration.ofNanos(1000));
 
-|Benchmark                        |       (rateLimiterType) |  Mode | Cnt |     Score |     Error |  Units |
-|---------------------------------|-------------------------|-------|-----|-----------|-----------|--------|
-|RaterLimiterBenchmark.thread_1   |        GuavaRateLimiter | thrpt |  15 |  6567.358 |▒ 135.104 | ops/ms |
-|RaterLimiterBenchmark.thread_1   |    StampLockRateLimiter | thrpt |  15 | 10612.681 |▒ 207.762 | ops/ms |
-|RaterLimiterBenchmark.thread_1   | SynchronizedRateLimiter | thrpt |  15 | 14597.511 |▒ 435.532 | ops/ms |
-|RaterLimiterBenchmark.thread_10  |        GuavaRateLimiter | thrpt |  15 |  4733.286 |▒ 1874.901 | ops/ms |
-|RaterLimiterBenchmark.thread_10  |    StampLockRateLimiter | thrpt |  15 | 17003.344 |▒ 786.402 | ops/ms |
-|RaterLimiterBenchmark.thread_10  | SynchronizedRateLimiter | thrpt |  15 | 13178.993 |▒ 690.287 | ops/ms |
-|RaterLimiterBenchmark.thread_100 |        GuavaRateLimiter | thrpt |  15 |  6484.510 |▒ 402.729 | ops/ms |
-|RaterLimiterBenchmark.thread_100 |    StampLockRateLimiter | thrpt |  15 | 17459.163 |▒ 602.203 | ops/ms |
-|RaterLimiterBenchmark.thread_100 | SynchronizedRateLimiter | thrpt |  15 | 11796.656 |▒ 2558.414 | ops/ms |
+        for (int i = 0; i < 100_000; i++) {
+            rateLimiter.invoke();
+
+            // do whatever should be rate limited.
+            SomeService.invoke(....);
+        }
+    }
+}
+```
+
+We also can limit invocation rate with huge invocation limit. However, it also means hug amount of memory will be used
+for storing the invocation history.
+
+To reduce the memory usage, we can raise the _sampleInterval_ (default to 1). Rate limiter only remembers the invocation
+time of 1st, N+1 th, 2N+1 th, 3N+1 th ... The greater sample interval, the less memory will be required, but also less
+accurate in terms of the projected invocation count.
+
+For example, we can limit calling ```SomeService.invoke(...)``` at most 1_000_000_000 times in 1 hour with sampling
+interval 1_000_000 requests with following example. The rate limiter will keep only 1_000_000_000 / 1_000_000 = 1_000
+invocation records.
+
+```java
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
+import one.williamwong.ratelimiter.*;
+
+class Main {
+    private static Random random = new Random(System.nanoTime());
+
+    public static void main(String[] args) {
+        // create a rate limiter
+        final RateLimiter rateLimiter = new SynchronizedRateLimiter(1_000_000_000, Duration.ofHours(1), 1_000_000);
+
+        for (int i = 0; i < 100_000; i++) {
+            rateLimiter.invoke();
+
+            // do whatever should be rate limited.
+            SomeService.invoke(....);
+        }
+    }
+}
+```
